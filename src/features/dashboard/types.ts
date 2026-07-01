@@ -35,6 +35,9 @@ export interface PostStats {
   bookmarks: number
 }
 
+/** Lifecycle status of a post (see docs/02-home/post-features-and-scheduling.md). */
+export type PostStatus = 'draft' | 'scheduled' | 'published'
+
 export interface Post {
   id: string
   author: FeedUser
@@ -46,6 +49,10 @@ export interface Post {
   reposted?: boolean
   /** Optional inline club price chart. */
   club?: ClubPrice
+  /** Lifecycle status; absent means published (legacy feed posts). */
+  status?: PostStatus
+  /** ISO time a scheduled post should publish. */
+  scheduledAt?: string
 }
 
 export type TradeSide = 'buy' | 'sell'
@@ -81,18 +88,20 @@ export interface FeedResponse {
 
 export interface CreatePostInput {
   body: string
-  /** Platform ids the post is cross-posted to (e.g. 'x'). */
+  /** Publish now (default) or save as draft / schedule. */
+  status?: PostStatus
+  /** ISO time to publish at when status is 'scheduled'. */
+  scheduledAt?: string
+  /**
+   * Platform ids the post is cross-posted to (e.g. 'x'). This is the composer's
+   * field name; the API maps it to the backend's `crossPostTargets` key.
+   */
   crossPostTo?: string[]
 }
 
-export interface ComposerDraft {
-  id: string
-  body: string
-  updatedAt: string
-}
-
-export interface ScheduledPost {
-  id: string
-  body: string
-  scheduledFor: string
+/** Fields patchable on an existing post via PATCH /posts/:id. */
+export interface UpdatePostInput {
+  body?: string
+  scheduledAt?: string
+  status?: PostStatus
 }

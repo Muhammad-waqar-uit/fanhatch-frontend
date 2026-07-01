@@ -1,10 +1,8 @@
 /** Mock data for the Dashboard feed (served when env.useMocks is true). */
 import type {
   ClubPricePoint,
-  ComposerDraft,
   FeedResponse,
   Post,
-  ScheduledPost,
   TradeActivity,
   TrendingItem,
 } from './types'
@@ -127,13 +125,38 @@ export const mockTrending: TrendingItem[] = [
   { id: 'tr5', name: 'Devon Park', handle: 'devonp', ticker: 'DEVON', priceEth: 0.089, changePct: -1.13 },
 ]
 
-export const mockScheduled: ScheduledPost[] = [
-  { id: 's1', body: 'Weekly club recap thread 🧵', scheduledFor: new Date(Date.now() + 86_400_000).toISOString() },
-  { id: 's2', body: 'Announcing the new holder rewards', scheduledFor: new Date(Date.now() + 172_800_000).toISOString() },
+/** Build a "posted by me" mock post with sane defaults. */
+function myPost(over: Partial<Post> & { id: string; body: string }): Post {
+  return {
+    author: { id: 'me', name: 'You', handle: 'you', verified: false },
+    createdAt: new Date().toISOString(),
+    stats: { likes: 0, comments: 0, reposts: 0, shares: 0, bookmarks: 0 },
+    ...over,
+  }
+}
+
+/**
+ * Scheduled + draft posts are stored as `Post[]` (status/scheduledAt set) so the
+ * mock write ops (updatePost/deletePost/publishNow) can mutate/move them exactly
+ * like the real backend. These arrays are the mutable source of truth in mock mode.
+ */
+export const mockScheduled: Post[] = [
+  myPost({
+    id: 's1',
+    body: 'Weekly club recap thread 🧵',
+    status: 'scheduled',
+    scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
+  }),
+  myPost({
+    id: 's2',
+    body: 'Announcing the new holder rewards',
+    status: 'scheduled',
+    scheduledAt: new Date(Date.now() + 172_800_000).toISOString(),
+  }),
 ]
 
-export const mockDrafts: ComposerDraft[] = [
-  { id: 'd1', body: 'Some thoughts on where creator clubs go next…', updatedAt: minutesAgo(120) },
+export const mockDrafts: Post[] = [
+  myPost({ id: 'd1', body: 'Some thoughts on where creator clubs go next…', status: 'draft', createdAt: minutesAgo(120) }),
 ]
 
 export const NEW_MEMBERS_COUNT = 6873

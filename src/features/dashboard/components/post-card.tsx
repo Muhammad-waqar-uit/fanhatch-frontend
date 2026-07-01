@@ -2,10 +2,12 @@
 
 import { BadgeCheck, Bookmark, Heart, MessageCircle, Repeat2, Share } from 'lucide-react'
 import { useState } from 'react'
+import { env } from '@/config/env'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber, timeAgo } from '@/shared/lib/format'
+import { likePost, unlikePost } from '../api/dashboard.api'
 import type { Post } from '../types'
 import { PriceChartInline } from './price-chart-inline'
 
@@ -48,10 +50,36 @@ function Action({ icon: Icon, count, active, activeClass, label, onClick }: Acti
 export function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(Boolean(post.liked))
   const [bookmarked, setBookmarked] = useState(Boolean(post.bookmarked))
+  // Server-reconciled like count (real mode). Null until the API responds, in
+  // which case we fall back to the optimistic-local derivation below.
+  const [serverLikes, setServerLikes] = useState<number | null>(null)
 
-  const likeCount = post.stats.likes + (liked && !post.liked ? 1 : 0) - (!liked && post.liked ? 1 : 0)
+  const localLikeCount =
+    post.stats.likes + (liked && !post.liked ? 1 : 0) - (!liked && post.liked ? 1 : 0)
+  const likeCount = serverLikes ?? localLikeCount
   const bookmarkCount =
     post.stats.bookmarks + (bookmarked && !post.bookmarked ? 1 : 0) - (!bookmarked && post.bookmarked ? 1 : 0)
+
+  async function handleLike() {
+    // Mock mode: keep the existing purely-local optimistic toggle.
+    if (env.useMocks) {
+      setLiked((v) => !v)
+      return
+    }
+    // Real mode: optimistic flip, then reconcile with the returned count.
+    const next = !liked
+    setLiked(next)
+    setServerLikes((prev) => (prev ?? localLikeCount) + (next ? 1 : -1))
+    try {
+      const res = next ? await likePost(post.id) : await unlikePost(post.id)
+      setLiked(res.liked)
+      setServerLikes(res.likes)
+    } catch {
+      // Roll back on failure.
+      setLiked(!next)
+      setServerLikes((prev) => (prev ?? localLikeCount) + (next ? -1 : 1))
+    }
+  }
 
   return (
     <Card>
@@ -77,7 +105,7 @@ export function PostCard({ post }: { post: Post }) {
             {post.club ? <PriceChartInline club={post.club} /> : null}
 
             <div className="mt-3 flex items-center justify-between pr-2">
-              <Action icon={Heart} label="Like" count={likeCount} active={liked} activeClass="text-[var(--color-negative)]" onClick={() => setLiked((v) => !v)} />
+              <Action icon={Heart} label="Like" count={likeCount} active={liked} activeClass="text-[var(--color-negative)]" onClick={handleLike} />
               <Action icon={MessageCircle} label="Comment" count={post.stats.comments} />
               <Action icon={Repeat2} label="Repost" count={post.stats.reposts} />
               <Action icon={Share} label="Share" count={post.stats.shares} />
