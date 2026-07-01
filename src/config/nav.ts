@@ -23,11 +23,11 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/', icon: Home, ready: true },
   { label: 'Chat', href: '/chat', icon: MessageCircle, ready: true },
-  { label: 'Wallet', href: '/wallet', icon: Wallet },
+  { label: 'Wallet', href: '/wallet', icon: Wallet, ready: true },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Discover', href: '/discover', icon: Compass },
   { label: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
-  { label: 'LP', href: '/lp', icon: Droplets },
+  { label: 'LP', href: '/lp', icon: Droplets, ready: true },
   { label: 'Premium', href: '/premium', icon: Crown },
   { label: 'Referrals', href: '/referrals', icon: Gift },
 ]
