@@ -1,0 +1,139 @@
+/** Mock data for the Dashboard feed (served when env.useMocks is true). */
+import type {
+  ClubPricePoint,
+  ComposerDraft,
+  FeedResponse,
+  Post,
+  ScheduledPost,
+  TradeActivity,
+  TrendingItem,
+} from './types'
+
+const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString()
+
+/** Build a gently trending sparkline series. */
+function series(seed: number[]): ClubPricePoint[] {
+  return seed.map((price, t) => ({ t, price }))
+}
+
+export const mockPosts: Post[] = [
+  {
+    id: 'p1',
+    author: {
+      id: 'u1',
+      name: 'Alex Rivera',
+      handle: 'alexr',
+      verified: true,
+    },
+    body: 'gm builders. shipping the next big thing for creator clubs — early holders are going to love what is coming. 🔑',
+    createdAt: minutesAgo(4),
+    stats: { likes: 342, comments: 58, reposts: 41, shares: 12, bookmarks: 23 },
+    liked: false,
+    bookmarked: false,
+    club: {
+      ticker: 'ALEX',
+      priceEth: 0.234,
+      changePct: 12.45,
+      tradingValueEth: 0.026,
+      history: series([0.18, 0.19, 0.187, 0.2, 0.205, 0.21, 0.222, 0.219, 0.228, 0.234]),
+    },
+  },
+  {
+    id: 'p2',
+    author: {
+      id: 'u2',
+      name: 'Mira Chen',
+      handle: 'mirac',
+      verified: true,
+    },
+    body: 'Club Q&A tonight at 8pm for all key holders. Drop your questions below 👇',
+    createdAt: minutesAgo(27),
+    stats: { likes: 128, comments: 34, reposts: 9, shares: 5, bookmarks: 14 },
+    liked: true,
+    bookmarked: false,
+  },
+  {
+    id: 'p3',
+    author: {
+      id: 'u3',
+      name: 'Devon Park',
+      handle: 'devonp',
+      verified: false,
+    },
+    body: 'Just rebalanced my club portfolio. The momentum on $MIRA keys is unreal this week.',
+    createdAt: minutesAgo(63),
+    stats: { likes: 76, comments: 11, reposts: 4, shares: 2, bookmarks: 6 },
+    liked: false,
+    bookmarked: true,
+    club: {
+      ticker: 'MIRA',
+      priceEth: 0.512,
+      changePct: -3.21,
+      tradingValueEth: -0.014,
+      history: series([0.55, 0.548, 0.54, 0.535, 0.52, 0.525, 0.518, 0.514, 0.51, 0.512]),
+    },
+  },
+]
+
+export const mockTrades: TradeActivity[] = [
+  {
+    id: 't1',
+    user: { id: 'u4', name: 'Sasha Lee', handle: 'sashal', verified: true },
+    side: 'buy',
+    amount: 3,
+    ticker: 'ALEX',
+    priceEth: 0.234,
+    createdAt: minutesAgo(2),
+  },
+  {
+    id: 't2',
+    user: { id: 'u5', name: 'Tomás Vidal', handle: 'tomasv' },
+    side: 'sell',
+    amount: 1,
+    ticker: 'MIRA',
+    priceEth: 0.512,
+    createdAt: minutesAgo(9),
+  },
+  {
+    id: 't3',
+    user: { id: 'u6', name: 'Priya N', handle: 'priyan', verified: true },
+    side: 'buy',
+    amount: 5,
+    ticker: 'DEVON',
+    priceEth: 0.089,
+    createdAt: minutesAgo(18),
+  },
+  {
+    id: 't4',
+    user: { id: 'u7', name: 'Kenji Watt', handle: 'kenjiw' },
+    side: 'buy',
+    amount: 2,
+    ticker: 'ALEX',
+    priceEth: 0.231,
+    createdAt: minutesAgo(41),
+  },
+]
+
+export const mockFeed: FeedResponse = {
+  posts: mockPosts,
+  trades: mockTrades,
+}
+
+export const mockTrending: TrendingItem[] = [
+  { id: 'tr1', name: 'Alex Rivera', handle: 'alexr', ticker: 'ALEX', priceEth: 0.234, changePct: 12.45 },
+  { id: 'tr2', name: 'Mira Chen', handle: 'mirac', ticker: 'MIRA', priceEth: 0.512, changePct: -3.21 },
+  { id: 'tr3', name: 'Priya N', handle: 'priyan', ticker: 'PRIYA', priceEth: 0.176, changePct: 8.02 },
+  { id: 'tr4', name: 'Kenji Watt', handle: 'kenjiw', ticker: 'KENJI', priceEth: 0.091, changePct: 4.67 },
+  { id: 'tr5', name: 'Devon Park', handle: 'devonp', ticker: 'DEVON', priceEth: 0.089, changePct: -1.13 },
+]
+
+export const mockScheduled: ScheduledPost[] = [
+  { id: 's1', body: 'Weekly club recap thread 🧵', scheduledFor: new Date(Date.now() + 86_400_000).toISOString() },
+  { id: 's2', body: 'Announcing the new holder rewards', scheduledFor: new Date(Date.now() + 172_800_000).toISOString() },
+]
+
+export const mockDrafts: ComposerDraft[] = [
+  { id: 'd1', body: 'Some thoughts on where creator clubs go next…', updatedAt: minutesAgo(120) },
+]
+
+export const NEW_MEMBERS_COUNT = 6873
