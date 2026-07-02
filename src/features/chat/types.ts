@@ -19,6 +19,44 @@ export interface ChatRoom {
   gated: boolean
   /** Member count, shown in the thread header. */
   memberCount?: number
+  /** Owning club id (present on club rooms; enables key gifting). */
+  clubId?: string
+}
+
+/** Result of `POST /clubs/:id/keys/gift`. */
+export interface GiftKeyResult {
+  from: { keyCount: number }
+  to: { userId: string; keyCount: number }
+  club: { id: string; memberCount: number }
+}
+
+/** Minimal user reference used by the president governance endpoints. */
+export interface UserRef {
+  id: string
+  handle: string
+  name: string
+}
+
+/** Result of `POST /clubs/:id/president/vote`. */
+export interface VoteResult {
+  candidateId: string
+  votes: number
+  elected: boolean
+  presidentId: string | null
+}
+
+/** A candidate's tally in the president standings. */
+export interface PresidentStanding {
+  candidate: UserRef
+  votes: number
+}
+
+/** Result of `GET /clubs/:id/president`. */
+export interface PresidentState {
+  presidentId: string | null
+  president: UserRef | null
+  supply: number
+  standings: PresidentStanding[]
 }
 
 export interface ChatMessage {

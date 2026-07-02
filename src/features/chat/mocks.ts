@@ -13,6 +13,7 @@ export const mockClubRooms: ChatRoom[] = [
     unread: 3,
     gated: true,
     memberCount: 248,
+    clubId: 'club-fanstech',
   },
   {
     id: 'club-degen',
@@ -23,6 +24,7 @@ export const mockClubRooms: ChatRoom[] = [
     unread: 0,
     gated: true,
     memberCount: 1280,
+    clubId: 'club-degen',
   },
   {
     id: 'club-builders',
@@ -33,6 +35,7 @@ export const mockClubRooms: ChatRoom[] = [
     unread: 12,
     gated: true,
     memberCount: 540,
+    clubId: 'club-builders',
   },
   {
     id: 'club-creators',
@@ -42,6 +45,7 @@ export const mockClubRooms: ChatRoom[] = [
     keyPrice: 0.42,
     gated: false,
     memberCount: 96,
+    clubId: 'club-creators',
   },
 ]
 

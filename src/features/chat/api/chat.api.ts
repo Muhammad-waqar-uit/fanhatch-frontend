@@ -15,8 +15,12 @@ import type {
   ChatRoom,
   ChatRoomDto,
   ChatTab,
+  GiftKeyResult,
+  PresidentState,
   UserCard,
   UserCardDto,
+  UserRef,
+  VoteResult,
 } from '../types'
 
 /** Small artificial delay so mock loading states are observable. */
@@ -36,6 +40,7 @@ export function mapRoom(dto: ChatRoomDto): ChatRoom {
     // Club rooms are key-gated (clubId is the future gating key); DMs are not.
     gated: dto.type === 'club',
     memberCount: dto.memberCount,
+    clubId: dto.clubId,
   }
 }
 
@@ -147,4 +152,128 @@ export async function createDm(peerUserId: string): Promise<ChatRoom> {
   }
   const dto = await apiClient.post<unknown, ChatRoomDto>('/chat/dm', { peerUserId })
   return mapRoom(dto)
+}
+
+/**
+ * POST /clubs/:id/keys/gift — gift `amount` club key(s) to another user. The
+ * signed-in user's balance decreases and the recipient's increases; the club's
+ * member count grows when the recipient becomes a new holder.
+ */
+export async function giftKey(
+  clubId: string,
+  toUserId: string,
+  amount = 1,
+): Promise<GiftKeyResult> {
+  if (env.useMocks) {
+    // Mimic the backend's 400s so the dialog's error states are exercisable.
+    if (toUserId === MOCK_CURRENT_USER_ID) {
+      return Promise.reject(new Error('You cannot gift a key to yourself.'))
+    }
+    if (amount < 1) {
+      return Promise.reject(new Error('Insufficient keys.'))
+    }
+    return delay({
+      from: { keyCount: Math.max(0, 5 - amount) },
+      to: { userId: toUserId, keyCount: amount },
+      club: { id: clubId, memberCount: 249 },
+    })
+  }
+  return apiClient.post<unknown, GiftKeyResult>(`/clubs/${clubId}/keys/gift`, {
+    toUserId,
+    amount,
+  })
+}
+
+// --- President governance (mock tally) --------------------------------------
+
+/** Seed candidates used to make mock standings look plausible. */
+const mockPresidentCandidates: UserRef[] = [
+  { id: 'kai', handle: '@kai', name: 'Kai Watanabe' },
+  { id: 'nadia', handle: '@nadia', name: 'Nadia Farouk' },
+  { id: 'diego', handle: '@diego', name: 'Diego Silva' },
+]
+
+/** In-memory vote tallies keyed by `clubId`, so re-voting updates standings. */
+const mockPresidentTallies: Record<string, Map<string, number>> = {}
+
+/** Total mock key supply per club — an election needs a majority of this. */
+const MOCK_PRESIDENT_SUPPLY = 5
+
+/** Lazily seed a club's tally with some starting votes. */
+function getMockTally(clubId: string): Map<string, number> {
+  let tally = mockPresidentTallies[clubId]
+  if (!tally) {
+    tally = new Map<string, number>([
+      ['kai', 2],
+      ['nadia', 1],
+    ])
+    mockPresidentTallies[clubId] = tally
+  }
+  return tally
+}
+
+/** Resolve a candidate's `UserRef`, falling back to the id for unknown voters. */
+function resolveCandidate(candidateId: string): UserRef {
+  const seeded = mockPresidentCandidates.find((c) => c.id === candidateId)
+  if (seeded) return seeded
+  const dmUser = mockDmUsers.find((u) => u.id === candidateId)
+  if (dmUser) {
+    return { id: dmUser.id, handle: dmUser.handle ?? `@${dmUser.id}`, name: dmUser.name }
+  }
+  return { id: candidateId, handle: `@${candidateId}`, name: candidateId }
+}
+
+/** Build the current standings snapshot from a mock tally. */
+function mockStandingsFromTally(clubId: string): PresidentState {
+  const tally = getMockTally(clubId)
+  const standings = [...tally.entries()]
+    .map(([id, votes]) => ({ candidate: resolveCandidate(id), votes }))
+    .sort((a, b) => b.votes - a.votes)
+  const leader = standings[0]
+  const elected = Boolean(leader && leader.votes > MOCK_PRESIDENT_SUPPLY / 2)
+  return {
+    presidentId: elected ? leader.candidate.id : null,
+    president: elected ? leader.candidate : null,
+    supply: MOCK_PRESIDENT_SUPPLY,
+    standings,
+  }
+}
+
+/**
+ * GET /clubs/:id/president — current president (if elected) and the live vote
+ * standings for the club's governance election.
+ */
+export async function getPresidentStanding(clubId: string): Promise<PresidentState> {
+  if (env.useMocks) {
+    return delay(mockStandingsFromTally(clubId))
+  }
+  return apiClient.get<unknown, PresidentState>(`/clubs/${clubId}/president`)
+}
+
+/**
+ * POST /clubs/:id/president/vote — cast a vote for `candidateId`. A candidate is
+ * elected once they hold a majority of the club's key supply.
+ */
+export async function voteForPresident(
+  clubId: string,
+  candidateId: string,
+): Promise<VoteResult> {
+  if (env.useMocks) {
+    if (!candidateId) {
+      return Promise.reject(new Error('Pick a candidate to vote for.'))
+    }
+    const tally = getMockTally(clubId)
+    const votes = (tally.get(candidateId) ?? 0) + 1
+    tally.set(candidateId, votes)
+    const elected = votes > MOCK_PRESIDENT_SUPPLY / 2
+    return delay({
+      candidateId,
+      votes,
+      elected,
+      presidentId: elected ? candidateId : null,
+    })
+  }
+  return apiClient.post<unknown, VoteResult>(`/clubs/${clubId}/president/vote`, {
+    candidateId,
+  })
 }
