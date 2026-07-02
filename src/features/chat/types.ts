@@ -26,6 +26,8 @@ export interface ChatMessage {
   roomId: string
   senderId: string
   senderName: string
+  /** Sender's handle (username); links to `/u/{handle}`. */
+  senderHandle?: string
   senderAvatarUrl?: string
   body: string
   /** ISO timestamp. */
@@ -78,6 +80,7 @@ export interface ChatMessageDto {
   roomId: string
   senderId: string
   senderName: string
+  senderHandle?: string
   senderAvatarUrl?: string
   type: ChatMessageTypeDto
   body: string

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/shared/lib/cn'
 import { timeAgo } from '@/shared/lib/format'
@@ -31,15 +32,36 @@ export function MessageItem({ message }: { message: ChatMessage }) {
     )
   }
 
+  const profileHref = message.senderHandle ? `/u/${message.senderHandle}` : null
+
+  const avatar = (
+    <Avatar className="size-8">
+      <AvatarImage src={message.senderAvatarUrl} alt={message.senderName} />
+      <AvatarFallback>{initials(message.senderName)}</AvatarFallback>
+    </Avatar>
+  )
+
   return (
     <div className="flex justify-start gap-2">
-      <Avatar className="size-8">
-        <AvatarImage src={message.senderAvatarUrl} alt={message.senderName} />
-        <AvatarFallback>{initials(message.senderName)}</AvatarFallback>
-      </Avatar>
+      {profileHref ? (
+        <Link href={profileHref} className="cursor-pointer">
+          {avatar}
+        </Link>
+      ) : (
+        avatar
+      )}
       <div className="max-w-[75%]">
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xs font-medium text-[var(--color-fg)]">{message.senderName}</span>
+          {profileHref ? (
+            <Link
+              href={profileHref}
+              className="cursor-pointer text-xs font-medium text-[var(--color-fg)] hover:underline"
+            >
+              {message.senderName}
+            </Link>
+          ) : (
+            <span className="text-xs font-medium text-[var(--color-fg)]">{message.senderName}</span>
+          )}
           <span className="text-[10px] text-[var(--color-muted)]">{timeAgo(message.sentAt)}</span>
         </div>
         <div

@@ -51,6 +51,7 @@ export function mapMessage(dto: ChatMessageDto): ChatMessage {
     roomId: dto.roomId,
     senderId: dto.senderId,
     senderName: dto.senderName,
+    senderHandle: dto.senderHandle,
     senderAvatarUrl: dto.senderAvatarUrl,
     body: dto.body,
     sentAt: dto.sentAt,
