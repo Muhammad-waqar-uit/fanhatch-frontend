@@ -1,5 +1,6 @@
 export { AuthProvider } from './components/auth-provider'
 export { LoginForm } from './components/login-form'
-export { useAuth, useLoginMutation } from './hooks/use-auth'
+export { useAuth, useLoginMutation, useSiweMutation } from './hooks/use-auth'
+export { connectAndSignIn, hasWallet } from './siwe'
 export { useAuthStore } from './store'
 export type { AuthResponse, AuthUser, LoginInput } from './types'

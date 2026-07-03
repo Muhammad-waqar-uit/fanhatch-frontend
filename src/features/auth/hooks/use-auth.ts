@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { login, register } from '../api/auth.api'
+import { connectAndSignIn } from '../siwe'
 import { useAuthStore } from '../store'
 import type { LoginInput } from '../types'
 
@@ -25,6 +26,23 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: ({ mode = 'login', ...input }: LoginInput & { mode?: 'login' | 'register' }) =>
       mode === 'register' ? register(input) : login(input),
+    onSuccess: ({ accessToken, user }) => {
+      setAuth(accessToken, user)
+      router.push('/')
+    },
+  })
+}
+
+/**
+ * Sign-In With Ethereum mutation. Runs the wallet connect → sign → verify flow
+ * and, on success, persists the session exactly like email login.
+ */
+export function useSiweMutation() {
+  const router = useRouter()
+  const setAuth = useAuthStore((s) => s.setAuth)
+
+  return useMutation({
+    mutationFn: () => connectAndSignIn(),
     onSuccess: ({ accessToken, user }) => {
       setAuth(accessToken, user)
       router.push('/')
