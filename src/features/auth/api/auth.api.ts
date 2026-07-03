@@ -61,8 +61,19 @@ export async function getWeb3AuthToken(): Promise<string | null> {
 /**
  * PATCH /users/me/wallet → persist the derived smart-account address. No-op in mock mode.
  * Returns the updated user (with `walletAddress`).
+ *
+ * When present, `message`/`signature` are an EOA-signed ownership proof the backend verifies
+ * (viem `recoverMessageAddress`) before trusting the address. Both are optional for backward-compat.
  */
-export async function updateWalletAddress(walletAddress: string): Promise<AuthUser | null> {
+export async function updateWalletAddress(
+  walletAddress: string,
+  proof?: { message?: string; signature?: string },
+): Promise<AuthUser | null> {
   if (env.useMocks) return null
-  return apiClient.patch<unknown, AuthUser>('/users/me/wallet', { walletAddress })
+  const body: { walletAddress: string; message?: string; signature?: string } = { walletAddress }
+  if (proof?.message && proof?.signature) {
+    body.message = proof.message
+    body.signature = proof.signature
+  }
+  return apiClient.patch<unknown, AuthUser>('/users/me/wallet', body)
 }

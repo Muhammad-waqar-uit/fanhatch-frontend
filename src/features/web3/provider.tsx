@@ -22,6 +22,7 @@ import {
   isWeb3Available,
   logout as clientLogout,
   restoreSession,
+  signOwnershipMessage,
 } from './client'
 
 export type Web3Status = 'disabled' | 'disconnected' | 'connecting' | 'connected' | 'error'
@@ -55,12 +56,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   // Guards a single in-flight background attempt (mount + re-render bursts).
   const attemptingRef = useRef(false)
 
-  // Persist the derived address once, only when it differs from what's stored.
+  // Persist the derived address once, only when it differs from what's stored. Attaches an
+  // EOA-signed ownership proof so the backend can verify the caller controls the Web3Auth key;
+  // if signing is unavailable we fall back to sending just the address (non-fatal).
   const persistWallet = useCallback(
     async (addr: Address) => {
       if (persistedWallet && persistedWallet.toLowerCase() === addr.toLowerCase()) return
       try {
-        await updateWalletAddress(addr)
+        const message = `Fans.tech wallet ownership: ${addr} @ ${Date.now()}`
+        const signature = await signOwnershipMessage(message)
+        await updateWalletAddress(addr, signature ? { message, signature } : undefined)
         setUser({ walletAddress: addr.toLowerCase() })
       } catch {
         // Non-fatal — the live address still drives the UI this session.

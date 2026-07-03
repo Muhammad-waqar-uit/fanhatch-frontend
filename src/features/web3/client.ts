@@ -219,6 +219,30 @@ export async function logout(): Promise<void> {
   }
 }
 
+/**
+ * Sign an ownership-proof message with the underlying Web3Auth **EOA** (not the smart account).
+ * The backend recovers this signature (viem `recoverMessageAddress`) to prove the caller controls
+ * the Web3Auth key before it trusts the smart-account address we're about to persist.
+ *
+ * Uses the SFA provider's ethers v5 signer (`signMessage` → `personal_sign` under the hood).
+ * Returns null when web3 is disabled or no session/provider is available, so callers can fall
+ * back to sending just the address (non-fatal).
+ */
+export async function signOwnershipMessage(message: string): Promise<string | null> {
+  if (!isWeb3Available()) return null
+  const provider = web3auth?.provider as unknown as Eip1193Provider | null
+  if (!web3auth?.connected || !provider) return null
+
+  try {
+    const ethersProvider = new ethers.providers.Web3Provider(provider as ethers.providers.ExternalProvider)
+    const signer = ethersProvider.getSigner()
+    return await signer.signMessage(message)
+  } catch {
+    // Signing unavailable (e.g. provider without personal_sign) — caller degrades gracefully.
+    return null
+  }
+}
+
 export function getSmartAccount(): BiconomySmartAccount | null {
   return smartAccount
 }
