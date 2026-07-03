@@ -46,3 +46,23 @@ export async function getMe(): Promise<AuthUser> {
   }
   return apiClient.get<unknown, AuthUser>('/auth/me')
 }
+
+/**
+ * GET /auth/web3auth/token → a freshly minted Web3Auth SFA id-token for the current
+ * session. Used on reload when we have an access token but the short-lived id-token
+ * from the original login response is gone. Returns null in mock/web2 mode.
+ */
+export async function getWeb3AuthToken(): Promise<string | null> {
+  if (env.useMocks) return null
+  const res = await apiClient.get<unknown, { web3authToken: string }>('/auth/web3auth/token')
+  return res?.web3authToken ?? null
+}
+
+/**
+ * PATCH /users/me/wallet → persist the derived smart-account address. No-op in mock mode.
+ * Returns the updated user (with `walletAddress`).
+ */
+export async function updateWalletAddress(walletAddress: string): Promise<AuthUser | null> {
+  if (env.useMocks) return null
+  return apiClient.patch<unknown, AuthUser>('/users/me/wallet', { walletAddress })
+}

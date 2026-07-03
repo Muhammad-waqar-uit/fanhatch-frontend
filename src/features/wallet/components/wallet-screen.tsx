@@ -15,6 +15,7 @@ import { useWalletKeys, useWalletOverview, useWalletRewards } from '../hooks/use
 import { AssetCard } from './asset-card'
 import { NetWorthHeader } from './net-worth-header'
 import { RewardsCards } from './rewards-cards'
+import { WalletAddressCard } from './wallet-address-card'
 
 /**
  * Wallet screen (web2). Header (Net Worth + $FANS Price), an asset cards row
@@ -39,6 +40,8 @@ export function WalletScreen() {
     <div className="h-full overflow-y-auto scrollbar-thin">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-6">
         <h1 className="text-lg font-semibold text-[var(--color-fg)]">Wallet</h1>
+
+        <WalletAddressCard />
 
         {overviewQuery.isLoading ? (
           <p className="py-16 text-center text-sm text-[var(--color-muted)]">Loading wallet…</p>

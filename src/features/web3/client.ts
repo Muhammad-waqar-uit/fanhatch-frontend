@@ -1,16 +1,16 @@
 'use client'
 
 /**
- * Web3 client — Web3Auth (PnP modal) → EOA provider → Biconomy smart account.
+ * Web3 client — Web3Auth **single-factor-auth (SFA)** → EOA provider → Biconomy smart account.
  *
- * Path choice: **Web3Auth `@web3auth/modal` (Plug-n-Play)**, not single-factor-auth.
- * SFA (`@web3auth/single-factor-auth`) needs a custom verifier + an externally minted
- * id-token (the reference dashboard wires its own `mvmnt-dev` verifier + backend JWT).
- * We don't own that verifier infra here, so PnP modal is used — it works standalone with
- * only the `clientId`, letting Web3Auth host the social/email login flow itself.
+ * Path choice: **background SFA**, not the PnP modal. The backend mints a custom id-token
+ * (RS256 JWT, `web3authToken`) on email/password login; we feed that straight into
+ * `web3auth.connect({ verifier, verifierId: <email>, idToken })` with **no user interaction**.
+ * The derived Biconomy smart-account address IS the user's wallet.
  *
- * Everything is client-only and gated behind `web3Config.enabled`. When disabled (or during
- * SSR) every entry point is a safe no-op so the app stays pure web2.
+ * Mirrors `mvmnt-user-dashboard/src/lib/web3/web3AuthManager.ts` (SFA init + connect + session
+ * restore). Everything is client-only and gated behind `web3Config.enabled`; when disabled (or
+ * during SSR) every entry point is a safe no-op so the app stays pure web2.
  */
 
 import { ethers } from 'ethers'
@@ -20,7 +20,7 @@ import { web3Config } from './config'
 // Types are imported lazily inside functions to keep these heavy SDKs out of the
 // server bundle and to avoid evaluating them when web3 is disabled.
 type BiconomySmartAccount = import('@biconomy/account').BiconomySmartAccountV2
-type Web3AuthModal = import('@web3auth/modal').Web3Auth
+type Web3AuthSfa = import('@web3auth/single-factor-auth').Web3Auth
 type Eip1193Provider = { request(args: { method: string; params?: unknown[] | object }): Promise<unknown> }
 
 export interface Web3Transaction {
@@ -35,23 +35,24 @@ export function isWeb3Available(): boolean {
 }
 
 // ---- module-level singletons (browser only) ---------------------------------
-let web3auth: Web3AuthModal | null = null
+let web3auth: Web3AuthSfa | null = null
 let smartAccount: BiconomySmartAccount | null = null
 let smartAccountAddress: Address | null = null
-let initWeb3AuthPromise: Promise<Web3AuthModal> | null = null
+let initWeb3AuthPromise: Promise<Web3AuthSfa> | null = null
+let connectInFlight: Promise<{ address: Address }> | null = null
 
 function hexChainId(): string {
   return `0x${web3Config.chainId.toString(16)}`
 }
 
-/** Create + init the Web3Auth PnP modal instance (idempotent, single-flight). */
-async function initWeb3Auth(): Promise<Web3AuthModal> {
+/** Create + init the Web3Auth SFA instance (idempotent, single-flight). */
+async function initWeb3Auth(): Promise<Web3AuthSfa> {
   if (web3auth) return web3auth
   if (initWeb3AuthPromise) return initWeb3AuthPromise
 
   initWeb3AuthPromise = (async () => {
-    const { Web3Auth } = await import('@web3auth/modal')
-    const { CHAIN_NAMESPACES, WEB3AUTH_NETWORK } = await import('@web3auth/base')
+    const { Web3Auth } = await import('@web3auth/single-factor-auth')
+    const { CHAIN_NAMESPACES } = await import('@web3auth/base')
     const { EthereumPrivateKeyProvider } = await import('@web3auth/ethereum-provider')
 
     const chainConfig = {
@@ -66,22 +67,18 @@ async function initWeb3Auth(): Promise<Web3AuthModal> {
 
     const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } })
 
-    // Map the config's network string to the Web3Auth enum; default to sapphire_devnet.
-    const networkMap: Record<string, (typeof WEB3AUTH_NETWORK)[keyof typeof WEB3AUTH_NETWORK]> = {
-      sapphire_devnet: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-      sapphire_mainnet: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-      mainnet: WEB3AUTH_NETWORK.MAINNET,
-      testnet: WEB3AUTH_NETWORK.TESTNET,
-    }
-    const web3AuthNetwork = networkMap[web3Config.web3auth.network] ?? WEB3AUTH_NETWORK.SAPPHIRE_DEVNET
-
     const instance = new Web3Auth({
       clientId: web3Config.web3auth.clientId,
-      web3AuthNetwork,
-      privateKeyProvider,
+      // SFA takes the Torus network string directly (e.g. 'sapphire_devnet').
+      web3AuthNetwork: web3Config.web3auth.network as never,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      privateKeyProvider: privateKeyProvider as any,
+      usePnPKey: false,
+      // 24h — matches the backend id-token lifetime; keeps the session across reloads.
+      sessionTime: 86400,
     })
 
-    await instance.initModal()
+    await instance.init()
     web3auth = instance
     return instance
   })()
@@ -119,22 +116,58 @@ async function initSmartAccount(provider: Eip1193Provider): Promise<BiconomySmar
 }
 
 /**
- * Full login: open the Web3Auth modal, then spin up the Biconomy smart account.
- * Returns the smart-account address. No-op-throws when web3 is unavailable.
+ * Background login: run SFA `connect()` with the backend-minted id-token, then spin up the
+ * Biconomy smart account. Decodes the verifier id (email) from the token — mirrors mvmnt.
+ * Single-flight so concurrent callers (mount effect + a manual reconnect) share one attempt.
+ * Returns the smart-account address.
  */
-export async function login(): Promise<{ address: Address }> {
+export async function connectWithToken(idToken: string): Promise<{ address: Address }> {
   if (!isWeb3Available()) throw new Error('Web3 is not enabled')
+  if (connectInFlight) return connectInFlight
 
-  const instance = await initWeb3Auth()
-  const provider = (await instance.connect()) as Eip1193Provider | null
-  if (!provider) throw new Error('Web3Auth login was cancelled or failed')
+  connectInFlight = (async () => {
+    const { decodeToken } = await import('@web3auth/single-factor-auth')
+    const instance = await initWeb3Auth()
 
-  await initSmartAccount(provider)
-  if (!smartAccountAddress) throw new Error('Smart account initialization failed')
-  return { address: smartAccountAddress }
+    const { payload } = decodeToken<{ email?: string }>(idToken)
+    const verifierId = payload?.email
+    if (!verifierId) throw new Error('id-token has no email claim — cannot derive verifierId')
+
+    // Reconnecting with a fresh token: drop any stale session first.
+    if (instance.connected) {
+      try {
+        await instance.logout()
+      } catch {
+        // best-effort — proceed to connect regardless
+      }
+    }
+
+    await instance.connect({
+      verifier: web3Config.web3auth.verifier,
+      verifierId,
+      idToken,
+    })
+
+    const provider = instance.provider as unknown as Eip1193Provider | null
+    if (!instance.connected || !provider) throw new Error('Web3Auth SFA connect failed')
+
+    await initSmartAccount(provider)
+    if (!smartAccountAddress) throw new Error('Smart account initialization failed')
+    return { address: smartAccountAddress }
+  })()
+
+  try {
+    return await connectInFlight
+  } finally {
+    connectInFlight = null
+  }
 }
 
-/** Reconnect the smart account if a Web3Auth session was restored (page reload). */
+/**
+ * Reconnect the smart account if a Web3Auth SFA session was restored from storage
+ * (page reload). No id-token needed — the SFA session key is persisted. Returns null
+ * when there's no restorable session.
+ */
 export async function restoreSession(): Promise<{ address: Address } | null> {
   if (!isWeb3Available()) return null
   const instance = await initWeb3Auth()
@@ -168,7 +201,7 @@ export function getSmartAccountAddress(): Address | null {
  * Returns the on-chain transaction hash.
  */
 export async function sendUserOp(txs: Web3Transaction | Web3Transaction[]): Promise<Hex> {
-  if (!smartAccount) throw new Error('Smart account not connected — call login() first')
+  if (!smartAccount) throw new Error('Smart account not connected — sign in first')
 
   const { PaymasterMode } = await import('@biconomy/account')
 

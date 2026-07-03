@@ -4,10 +4,10 @@
 export { web3Config } from './config'
 export { Web3Provider, useWeb3Context, type Web3ContextValue, type Web3Status } from './provider'
 export { useSmartAccount, type UseSmartAccount } from './use-smart-account'
-export { ConnectButton } from './connect-button'
+export { WalletChip } from './connect-button'
 export {
   isWeb3Available,
-  login,
+  connectWithToken,
   logout,
   restoreSession,
   getSmartAccount,

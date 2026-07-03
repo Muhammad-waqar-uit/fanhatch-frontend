@@ -12,6 +12,8 @@ export const web3Config = {
   web3auth: {
     clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID ?? '',
     network: process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK ?? 'sapphire_devnet',
+    // Custom JWT verifier configured in the Web3Auth dashboard (validates our backend id-token).
+    verifier: process.env.NEXT_PUBLIC_WEB3AUTH_VERIFIER ?? 'fanstech-dev',
   },
   biconomy: {
     bundlerUrl: process.env.NEXT_PUBLIC_BUNDLER_URL ?? '',
