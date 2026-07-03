@@ -116,37 +116,69 @@ async function initSmartAccount(provider: Eip1193Provider): Promise<BiconomySmar
 }
 
 /**
+ * Web3Auth rejects an id-token in two recoverable ways (matches mvmnt's web3AuthManager):
+ *  - "timesigned is more than 6m0s ago" → the token's `iat` is stale.
+ *  - "token is used" → Web3Auth already consumed this exact JWT (even if its downstream 503'd).
+ * On either, re-mint a fresh id-token and retry the connect once.
+ */
+const WEB3AUTH_REJECTION_RETRY_RE = /timesigned|token is used/i
+
+/** One SFA connect attempt with a given id-token (drops any stale session first). */
+async function doConnect(instance: Web3AuthSfa, idToken: string): Promise<void> {
+  const { decodeToken } = await import('@web3auth/single-factor-auth')
+  const { payload } = decodeToken<{ email?: string }>(idToken)
+  const verifierId = payload?.email
+  if (!verifierId) throw new Error('id-token has no email claim — cannot derive verifierId')
+
+  if (instance.connected) {
+    try {
+      await instance.logout()
+    } catch {
+      // best-effort — proceed to connect regardless
+    }
+  }
+
+  // subVerifier set => `fanstech-dev` is an AGGREGATE verifier wrapping this sub-verifier
+  // (mvmnt uses "custom-auth"). Unset => a plain single custom verifier. Matches the dashboard.
+  const sub = web3Config.web3auth.subVerifier
+  await instance.connect({
+    verifier: web3Config.web3auth.verifier,
+    verifierId,
+    idToken,
+    ...(sub ? { subVerifierInfoArray: [{ verifier: sub, idToken }] } : {}),
+  })
+}
+
+/**
  * Background login: run SFA `connect()` with the backend-minted id-token, then spin up the
  * Biconomy smart account. Decodes the verifier id (email) from the token — mirrors mvmnt.
  * Single-flight so concurrent callers (mount effect + a manual reconnect) share one attempt.
- * Returns the smart-account address.
+ *
+ * `getFreshToken` re-mints a Web3Auth id-token (our `GET /auth/web3auth/token`); when provided,
+ * a stale/consumed-token rejection triggers one refresh-and-retry. Returns the smart-account address.
  */
-export async function connectWithToken(idToken: string): Promise<{ address: Address }> {
+export async function connectWithToken(
+  idToken: string,
+  getFreshToken?: () => Promise<string | null>,
+): Promise<{ address: Address }> {
   if (!isWeb3Available()) throw new Error('Web3 is not enabled')
   if (connectInFlight) return connectInFlight
 
   connectInFlight = (async () => {
-    const { decodeToken } = await import('@web3auth/single-factor-auth')
     const instance = await initWeb3Auth()
 
-    const { payload } = decodeToken<{ email?: string }>(idToken)
-    const verifierId = payload?.email
-    if (!verifierId) throw new Error('id-token has no email claim — cannot derive verifierId')
-
-    // Reconnecting with a fresh token: drop any stale session first.
-    if (instance.connected) {
-      try {
-        await instance.logout()
-      } catch {
-        // best-effort — proceed to connect regardless
+    try {
+      await doConnect(instance, idToken)
+    } catch (e) {
+      const msg = (e as Error)?.message ?? ''
+      if (getFreshToken && WEB3AUTH_REJECTION_RETRY_RE.test(msg)) {
+        const fresh = await getFreshToken()
+        if (!fresh) throw e
+        await doConnect(instance, fresh)
+      } else {
+        throw e
       }
     }
-
-    await instance.connect({
-      verifier: web3Config.web3auth.verifier,
-      verifierId,
-      idToken,
-    })
 
     const provider = instance.provider as unknown as Eip1193Provider | null
     if (!instance.connected || !provider) throw new Error('Web3Auth SFA connect failed')

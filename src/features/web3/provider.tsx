@@ -89,15 +89,18 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Otherwise obtain a fresh id-token: from the login response, else re-mint.
-      const idToken = web3authToken ?? (await getWeb3AuthToken())
+      // Always pre-mint a FRESH id-token — Web3Auth rejects a token whose `iat` is >6min old
+      // ("timesigned"), so the stored login token can be stale on reload. Fall back to the
+      // login-response token if the refresh call fails. Mirrors mvmnt's pre-refresh.
+      const idToken = (await getWeb3AuthToken()) ?? web3authToken
       if (!idToken) {
         // No id-token available (mock/web2 session) — stay disconnected silently.
         setStatus('disconnected')
         return
       }
 
-      const { address: addr } = await connectWithToken(idToken)
+      // Pass getWeb3AuthToken so a stale/consumed-token rejection re-mints + retries once.
+      const { address: addr } = await connectWithToken(idToken, getWeb3AuthToken)
       setAddress(addr)
       setStatus('connected')
       void persistWallet(addr)

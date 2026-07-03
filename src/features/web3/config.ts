@@ -14,6 +14,9 @@ export const web3Config = {
     network: process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK ?? 'sapphire_devnet',
     // Custom JWT verifier configured in the Web3Auth dashboard (validates our backend id-token).
     verifier: process.env.NEXT_PUBLIC_WEB3AUTH_VERIFIER ?? 'fanstech-dev',
+    // Only if the verifier above is an AGGREGATE verifier: the wrapped sub-verifier name
+    // (mvmnt uses "custom-auth"). Leave empty for a plain single custom verifier.
+    subVerifier: process.env.NEXT_PUBLIC_WEB3AUTH_SUB_VERIFIER ?? '',
   },
   biconomy: {
     bundlerUrl: process.env.NEXT_PUBLIC_BUNDLER_URL ?? '',
