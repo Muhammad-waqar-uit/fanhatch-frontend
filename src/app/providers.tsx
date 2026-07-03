@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { AuthProvider } from '@/features/auth'
+import { Web3Provider } from '@/features/web3'
 
 /** Global client providers (TanStack Query + auth store hydration). */
 export function Providers({ children }: { children: ReactNode }) {
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <Web3Provider>{children}</Web3Provider>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

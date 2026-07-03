@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth'
+import { ConnectButton } from '@/features/web3'
 import { NAV_ITEMS } from '@/config/nav'
 import { cn } from '@/shared/lib/cn'
 
@@ -46,8 +47,12 @@ export function AppSidebar() {
           )
         })}
       </nav>
+      {/* Web3Auth connect (renders null when NEXT_PUBLIC_WEB3_ENABLED is off). */}
+      <div className="mt-auto pt-2">
+        <ConnectButton className="w-full" />
+      </div>
       {user ? (
-        <div className="mt-auto flex flex-col gap-2 rounded-[var(--radius)] bg-[var(--color-surface-2)] p-3">
+        <div className="mt-2 flex flex-col gap-2 rounded-[var(--radius)] bg-[var(--color-surface-2)] p-3">
           <div className="truncate text-sm font-medium text-[var(--color-fg)]">
             {user.handle ? `@${user.handle}` : (user.email ?? 'Signed in')}
           </div>
