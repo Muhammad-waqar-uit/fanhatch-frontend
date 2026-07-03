@@ -1,10 +1,12 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Users } from 'lucide-react'
+import { Lock, Users } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { env } from '@/config/env'
 import { formatNumber } from '@/shared/lib/format'
@@ -33,11 +35,14 @@ function initials(name: string): string {
 }
 
 export function MessageThread({ roomId }: { roomId: string }) {
+  const router = useRouter()
   const setMessages = useChatStore((s) => s.setMessages)
   const appendMessage = useChatStore((s) => s.appendMessage)
   const messages = useChatStore((s) => s.messagesByRoom[roomId])
   const bottomRef = useRef<HTMLDivElement>(null)
   const [accessRevoked, setAccessRevoked] = useState(false)
+  // Set when the gateway denies a club join for lack of a key. Reset per-room.
+  const [locked, setLocked] = useState(false)
 
   // Resolve room metadata from either tab.
   const { data: rooms = [] } = useQuery({
@@ -65,11 +70,17 @@ export function MessageThread({ roomId }: { roomId: string }) {
 
   // Subscribe to live messages over the socket (no-op in mock mode).
   useEffect(() => {
+    // Reset gating state whenever the room changes; mock mode is never locked.
+    setLocked(false)
+    setAccessRevoked(false)
     if (env.useMocks) return
     const socket = getChatSocket()
     if (!socket) return
 
-    joinRoom(roomId)
+    // The join ack gates club rooms: `{ ok: false, error: 'KEY_REQUIRED' }`.
+    void joinRoom(roomId).then((ack) => {
+      if (!ack.ok && ack.error === 'KEY_REQUIRED') setLocked(true)
+    })
 
     const offMessage = onMessage((message) => {
       if (message.roomId === roomId) appendMessage(message)
@@ -84,7 +95,7 @@ export function MessageThread({ roomId }: { roomId: string }) {
     // After a reconnect, re-join whichever room is currently active.
     const handleConnect = (): void => {
       const activeRoomId = useChatStore.getState().activeRoomId
-      if (activeRoomId) joinRoom(activeRoomId)
+      if (activeRoomId) void joinRoom(activeRoomId)
     }
     socket.on('connect', handleConnect)
 
@@ -132,16 +143,38 @@ export function MessageThread({ roomId }: { roomId: string }) {
         </p>
       ) : null}
 
-      <ScrollArea className="min-h-0 flex-1 px-4 py-4">
-        <div className="flex flex-col gap-4">
-          {(messages ?? []).map((message) => (
-            <MessageItem key={message.id} message={message} />
-          ))}
-          <div ref={bottomRef} />
+      {locked ? (
+        <div
+          role="alert"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center"
+        >
+          <span className="flex size-14 items-center justify-center rounded-full bg-[var(--color-surface-2)] text-[var(--color-muted)]">
+            <Lock className="size-6" />
+          </span>
+          <p className="text-sm font-semibold text-[var(--color-fg)]">
+            🔒 This club is key-gated
+          </p>
+          <p className="max-w-xs text-xs text-[var(--color-muted)]">
+            You need a key to join {room?.name ?? 'this club'}.
+          </p>
+          <Button size="sm" onClick={() => router.push('/wallet')}>
+            Get a key
+          </Button>
         </div>
-      </ScrollArea>
+      ) : (
+        <>
+          <ScrollArea className="min-h-0 flex-1 px-4 py-4">
+            <div className="flex flex-col gap-4">
+              {(messages ?? []).map((message) => (
+                <MessageItem key={message.id} message={message} />
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          </ScrollArea>
 
-      <MessageComposer roomId={roomId} />
+          <MessageComposer roomId={roomId} />
+        </>
+      )}
     </div>
   )
 }

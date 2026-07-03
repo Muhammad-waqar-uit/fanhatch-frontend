@@ -63,9 +63,20 @@ export function getChatSocket(): ChatSocket | null {
   return socket
 }
 
-/** Ask the gateway to join a room channel (no-op in mock/SSR). */
-export function joinRoom(roomId: string): void {
-  getChatSocket()?.emit(ChatSocketEvents.JoinRoom, { roomId }, () => {})
+/**
+ * Ask the gateway to join a room channel and resolve with the ack envelope so
+ * callers can detect gating (e.g. `{ ok: false, error: 'KEY_REQUIRED' }`).
+ * Resolves `{ ok: true }` in mock/SSR mode where there is no socket to gate.
+ */
+export function joinRoom(roomId: string): Promise<SocketAck<{ roomId: string }>> {
+  return new Promise((resolve) => {
+    const s = getChatSocket()
+    if (!s) {
+      resolve({ ok: true })
+      return
+    }
+    s.emit(ChatSocketEvents.JoinRoom, { roomId }, (res) => resolve(res))
+  })
 }
 
 /** Leave a room channel (no-op in mock/SSR). */
