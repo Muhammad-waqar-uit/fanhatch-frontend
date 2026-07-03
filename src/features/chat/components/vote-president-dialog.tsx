@@ -9,10 +9,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useVoteOnchain, useWeb3Context, web3Config } from '@/features/web3'
 import { getPresidentStanding, searchUsers, voteForPresident } from '../api/chat.api'
+import { asAddress, toClubIdBig } from '../lib/onchain'
 import type { ChatRoom, UserCard, VoteResult } from '../types'
 
-/** Pull a human-readable message off a failed vote (axios 400 body or Error). */
+/** An on-chain vote resolves to a tx hash instead of the web2 `VoteResult`. */
+type VoteOutcome = VoteResult | { txHash: string }
+
+/** Pull a human-readable message off a failed vote (axios 400 body, viem revert, or Error). */
 function voteErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as { message?: string | string[] } | undefined
@@ -20,6 +25,8 @@ function voteErrorMessage(error: unknown): string {
     if (Array.isArray(message)) return message[0]
     if (message) return message
   }
+  const e = error as { shortMessage?: string } | undefined
+  if (e?.shortMessage) return e.shortMessage
   if (error instanceof Error) return error.message
   return 'Could not cast your vote. Please try again.'
 }
@@ -33,10 +40,19 @@ function voteErrorMessage(error: unknown): string {
  */
 export function VotePresidentDialog({ room, onClose }: { room: ChatRoom; onClose: () => void }) {
   const clubId = room.clubId ?? ''
+  const { isConnected } = useWeb3Context()
   const queryClient = useQueryClient()
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [selected, setSelected] = useState<UserCard | null>(null)
+
+  const voteOnchain = useVoteOnchain()
+  const clubIdBig = toClubIdBig(clubId)
+  const candidate = asAddress(selected?.id)
+  // On-chain vote only when connected AND the data is on-chain-shaped (numeric club
+  // id + an EVM address candidate); otherwise the web2 API is the fallback.
+  const useOnchain =
+    web3Config.enabled && isConnected && clubIdBig !== null && candidate !== null
 
   // Close on Escape.
   useEffect(() => {
@@ -73,10 +89,20 @@ export function VotePresidentDialog({ room, onClose }: { room: ChatRoom; onClose
     error,
     data: result,
     reset,
-  } = useMutation<VoteResult, unknown, void>({
-    mutationFn: () => voteForPresident(clubId, selected?.id ?? ''),
+  } = useMutation<VoteOutcome, unknown, void>({
+    mutationFn: async () => {
+      if (useOnchain) {
+        const txHash = await voteOnchain.mutateAsync({
+          clubId: clubIdBig!,
+          candidate: candidate!,
+        })
+        return { txHash }
+      }
+      return voteForPresident(clubId, selected?.id ?? '')
+    },
     onSuccess: () => {
-      // Refresh standings after a successful vote.
+      // Refresh standings after a successful vote (web2 tally; on-chain votes settle
+      // on-chain and won't move this mock/web2 standing).
       queryClient.invalidateQueries({ queryKey: standingKey })
     },
   })
@@ -163,9 +189,11 @@ export function VotePresidentDialog({ room, onClose }: { room: ChatRoom; onClose
                 <Trophy className="size-5" />
               </span>
               <p className="text-sm font-medium text-[var(--color-fg)]">
-                {result.elected
-                  ? `🏆 ${selected?.name} is now president`
-                  : `Vote counted — ${result.votes} vote${result.votes === 1 ? '' : 's'}`}
+                {'txHash' in result
+                  ? 'Vote submitted on-chain — it’ll count once the transaction confirms.'
+                  : result.elected
+                    ? `🏆 ${selected?.name} is now president`
+                    : `Vote counted — ${result.votes} vote${result.votes === 1 ? '' : 's'}`}
               </p>
               <Button className="mt-1 w-full" onClick={onClose}>
                 Done

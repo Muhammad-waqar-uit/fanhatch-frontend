@@ -9,8 +9,16 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { env } from '@/config/env'
+import {
+  resolveClubKeyAddress,
+  useBuyKey,
+  useKeyPrice,
+  useWeb3Context,
+  web3Config,
+} from '@/features/web3'
 import { formatNumber } from '@/shared/lib/format'
 import { getMessages, getRooms } from '../api/chat.api'
+import { toClubIdBig, txErrorMessage } from '../lib/onchain'
 import {
   getChatSocket,
   joinRoom,
@@ -35,7 +43,6 @@ function initials(name: string): string {
 }
 
 export function MessageThread({ roomId }: { roomId: string }) {
-  const router = useRouter()
   const setMessages = useChatStore((s) => s.setMessages)
   const appendMessage = useChatStore((s) => s.appendMessage)
   const messages = useChatStore((s) => s.messagesByRoom[roomId])
@@ -157,9 +164,7 @@ export function MessageThread({ roomId }: { roomId: string }) {
           <p className="max-w-xs text-xs text-[var(--color-muted)]">
             You need a key to join {room?.name ?? 'this club'}.
           </p>
-          <Button size="sm" onClick={() => router.push('/wallet')}>
-            Get a key
-          </Button>
+          <GetKeyButton room={room} />
         </div>
       ) : (
         <>
@@ -175,6 +180,76 @@ export function MessageThread({ roomId }: { roomId: string }) {
           <MessageComposer roomId={roomId} />
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * "Get a key" affordance for the locked club panel. When web3 is enabled and the
+ * wallet is connected (and the room has a numeric on-chain clubId), it buys one key
+ * on-chain via a sponsored userop — resolving the ClubKey + a fresh buy-price quote
+ * first, then showing pending/success/error inline. Otherwise it keeps the web2
+ * behaviour of routing to the Wallet screen.
+ */
+function GetKeyButton({ room }: { room?: ChatRoom }) {
+  const router = useRouter()
+  const { isConnected } = useWeb3Context()
+  const clubIdBig = toClubIdBig(room?.clubId)
+  const onchain = web3Config.enabled && isConnected && clubIdBig !== null
+
+  // Resolve the club's ClubKey address (from the factory) only on the on-chain path.
+  const clubKeyQuery = useQuery({
+    queryKey: ['web3', 'clubKeyAddr', room?.clubId],
+    enabled: onchain,
+    queryFn: () => resolveClubKeyAddress({ clubId: clubIdBig! }),
+  })
+  // Quote the buy price for 1 key; the hook self-disables until the address resolves.
+  const priceQuery = useKeyPrice(clubKeyQuery.data ?? undefined, 1n)
+  const buyKey = useBuyKey()
+
+  if (!onchain) {
+    return (
+      <Button size="sm" onClick={() => router.push('/wallet')}>
+        Get a key
+      </Button>
+    )
+  }
+
+  const buyPrice = priceQuery.data?.buy.raw
+  const preparing = clubKeyQuery.isLoading || priceQuery.isLoading || buyPrice === undefined
+  const label = buyKey.isPending
+    ? 'Buying key…'
+    : buyKey.isSuccess
+      ? 'Key purchased'
+      : preparing
+        ? 'Preparing…'
+        : 'Buy a key'
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <Button
+        size="sm"
+        disabled={preparing || buyKey.isPending || buyKey.isSuccess}
+        onClick={() =>
+          buyKey.mutate({
+            clubId: clubIdBig!,
+            clubKey: clubKeyQuery.data ?? undefined,
+            amount: 1n,
+            buyPrice,
+          })
+        }
+      >
+        {label}
+      </Button>
+      {buyKey.isError ? (
+        <p className="max-w-xs text-xs text-[var(--color-danger,#ef4444)]">
+          {txErrorMessage(buyKey.error, 'Could not buy a key. Please try again.')}
+        </p>
+      ) : buyKey.isSuccess ? (
+        <p className="max-w-xs text-xs text-[var(--color-muted)]">
+          Your key is on its way — reopen the club once the transaction confirms.
+        </p>
+      ) : null}
     </div>
   )
 }

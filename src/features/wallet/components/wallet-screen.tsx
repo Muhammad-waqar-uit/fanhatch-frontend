@@ -10,6 +10,12 @@ import {
   Tag,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import {
+  useEthBalance,
+  useFansBalance,
+  useWeb3Context,
+  web3Config,
+} from '@/features/web3'
 import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { useWalletKeys, useWalletOverview, useWalletRewards } from '../hooks/use-wallet'
 import { AssetCard } from './asset-card'
@@ -29,8 +35,17 @@ export function WalletScreen() {
   const keysQuery = useWalletKeys()
   const rewardsQuery = useWalletRewards()
 
+  // Live on-chain balances when the wallet is connected; fall back to web2 sim balances.
+  const { address, isConnected } = useWeb3Context()
+  const onchain = web3Config.enabled && isConnected
+  const fansQuery = useFansBalance(address ?? undefined)
+  const ethQuery = useEthBalance(address ?? undefined)
+
   const overview = overviewQuery.data
   const keyCount = overview?.keys.count ?? keysQuery.data?.length ?? 0
+
+  const liveEth = onchain ? ethQuery.data : undefined
+  const liveFans = onchain ? fansQuery.data : undefined
 
   // Swap lives on the LP page; these are navigation stubs for now.
   const goToLp = () => router.push('/lp')
@@ -58,8 +73,10 @@ export function WalletScreen() {
                 icon={Coins}
                 title="Ethereum"
                 subtitle="ETH"
-                value={`${formatNumber(Number(overview.balances.eth))} ETH`}
-                secondary={formatUsd(Number(overview.balances.ethUsd))}
+                value={`${formatNumber(Number(liveEth?.formatted ?? overview.balances.eth))} ETH`}
+                secondary={
+                  liveEth ? 'Live on-chain balance' : formatUsd(Number(overview.balances.ethUsd))
+                }
                 actions={[
                   { label: 'Send', onClick: goToLp, icon: ArrowUpRight },
                   { label: 'Receive', onClick: goToLp, variant: 'outline', icon: ArrowDownLeft },
@@ -70,8 +87,10 @@ export function WalletScreen() {
                 icon={Coins}
                 title="$FANS"
                 subtitle="Platform Token"
-                value={`${formatNumber(Number(overview.balances.fans))} $FANS`}
-                secondary={formatUsd(Number(overview.balances.fansUsd))}
+                value={`${formatNumber(Number(liveFans?.formatted ?? overview.balances.fans))} $FANS`}
+                secondary={
+                  liveFans ? 'Live on-chain balance' : formatUsd(Number(overview.balances.fansUsd))
+                }
                 actions={[
                   { label: 'Buy', onClick: goToLp, variant: 'primary', icon: ShoppingCart },
                   { label: 'Sell', onClick: goToLp, variant: 'outline', icon: Tag },

@@ -8,10 +8,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useGiftKeyOnchain, useWeb3Context, web3Config } from '@/features/web3'
 import { giftKey, searchUsers } from '../api/chat.api'
+import { asAddress, toClubIdBig } from '../lib/onchain'
 import type { ChatRoom, GiftKeyResult, UserCard } from '../types'
 
-/** Pull a human-readable message off a failed gift (axios 400 body or Error). */
+/** An on-chain gift resolves to a tx hash instead of the web2 `GiftKeyResult`. */
+type GiftOutcome = GiftKeyResult | { txHash: string }
+
+/** Pull a human-readable message off a failed gift (axios 400 body, viem revert, or Error). */
 function giftErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as { message?: string | string[] } | undefined
@@ -19,6 +24,8 @@ function giftErrorMessage(error: unknown): string {
     if (Array.isArray(message)) return message[0]
     if (message) return message
   }
+  const e = error as { shortMessage?: string } | undefined
+  if (e?.shortMessage) return e.shortMessage
   if (error instanceof Error) return error.message
   return 'Could not gift the key. Please try again.'
 }
@@ -31,10 +38,19 @@ function giftErrorMessage(error: unknown): string {
  */
 export function GiftKeyDialog({ room, onClose }: { room: ChatRoom; onClose: () => void }) {
   const clubId = room.clubId ?? ''
+  const { isConnected } = useWeb3Context()
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [selected, setSelected] = useState<UserCard | null>(null)
   const [amount, setAmount] = useState(1)
+
+  const giftOnchain = useGiftKeyOnchain()
+  const clubIdBig = toClubIdBig(clubId)
+  const recipient = asAddress(selected?.id)
+  // On-chain gift only when connected AND the data is on-chain-shaped (numeric club
+  // id + an EVM address recipient); otherwise the web2 API is the fallback.
+  const useOnchain =
+    web3Config.enabled && isConnected && clubIdBig !== null && recipient !== null
 
   // Close on Escape.
   useEffect(() => {
@@ -63,8 +79,18 @@ export function GiftKeyDialog({ room, onClose }: { room: ChatRoom; onClose: () =
     error,
     data: result,
     reset,
-  } = useMutation<GiftKeyResult, unknown, void>({
-    mutationFn: () => giftKey(clubId, selected?.id ?? '', amount),
+  } = useMutation<GiftOutcome, unknown, void>({
+    mutationFn: async () => {
+      if (useOnchain) {
+        const txHash = await giftOnchain.mutateAsync({
+          clubId: clubIdBig!,
+          to: recipient!,
+          amount: BigInt(amount),
+        })
+        return { txHash }
+      }
+      return giftKey(clubId, selected?.id ?? '', amount)
+    },
   })
 
   const canGift = Boolean(selected) && amount >= 1 && !isPending
@@ -97,10 +123,16 @@ export function GiftKeyDialog({ room, onClose }: { room: ChatRoom; onClose: () =
               <p className="text-sm font-medium text-[var(--color-fg)]">
                 Gifted {amount} key{amount > 1 ? 's' : ''} to {selected?.name}.
               </p>
-              <p className="text-xs text-[var(--color-muted)]">
-                They now hold {result.to.keyCount} key
-                {result.to.keyCount === 1 ? '' : 's'} in {room.name}.
-              </p>
+              {'to' in result ? (
+                <p className="text-xs text-[var(--color-muted)]">
+                  They now hold {result.to.keyCount} key
+                  {result.to.keyCount === 1 ? '' : 's'} in {room.name}.
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--color-muted)]">
+                  Sent on-chain — it’ll reflect in {room.name} once the transaction confirms.
+                </p>
+              )}
               <Button className="mt-1 w-full" onClick={onClose}>
                 Done
               </Button>
