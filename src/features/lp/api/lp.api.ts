@@ -48,6 +48,8 @@ export function lpErrorMessage(error: unknown, fallback = 'Something went wrong'
   const msg = err?.response?.data?.message
   if (typeof msg === 'string' && msg) return msg
   if (isAxiosError(error) && error.message) return error.message
+  // On-chain calls reject with a plain Error (e.g. a revert reason) — surface it.
+  if (error instanceof Error && error.message) return error.message
   return fallback
 }
 

@@ -8,8 +8,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowDownUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { parseEther } from 'viem'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useEthBalance, useFansBalance, useSwapQuote, useWeb3Context, web3Config } from '@/features/web3'
 import { formatNumber } from '@/shared/lib/format'
 import { lpErrorMessage, mockWalletBalances, quote } from '../api/lp.api'
 import { useSwap } from '../hooks/use-lp'
@@ -20,12 +22,33 @@ const TOKEN = {
   fans: { symbol: '$FANS', decimals: 2 },
 } as const
 
+/** Parse a decimal string to 18-decimal wei; 0n on empty/invalid. */
+function toWei(value: string): bigint {
+  const v = value.trim()
+  if (!v || Number(v) <= 0) return 0n
+  try {
+    return parseEther(v)
+  } catch {
+    return 0n
+  }
+}
+
 export function SwapPanel() {
   const [direction, setDirection] = useState<SwapDirection>('eth_to_fans')
   const [amountIn, setAmountIn] = useState('')
   const [debounced, setDebounced] = useState('')
-  const balances = useMemo(() => mockWalletBalances(), [])
   const { mutate: doSwap, isPending, error, reset } = useSwap()
+
+  // On-chain when a wallet is connected; otherwise the web2/mock path.
+  const { address, isConnected } = useWeb3Context()
+  const onchain = web3Config.enabled && isConnected
+
+  const mockBal = useMemo(() => mockWalletBalances(), [])
+  const ethBal = useEthBalance(onchain ? address ?? undefined : undefined)
+  const fansBal = useFansBalance(onchain ? address ?? undefined : undefined)
+  const balances = onchain
+    ? { eth: Number(ethBal.data?.formatted ?? 0), fans: Number(fansBal.data?.formatted ?? 0) }
+    : mockBal
 
   const payToken = direction === 'eth_to_fans' ? TOKEN.eth : TOKEN.fans
   const receiveToken = direction === 'eth_to_fans' ? TOKEN.fans : TOKEN.eth
@@ -37,14 +60,21 @@ export function SwapPanel() {
     return () => clearTimeout(t)
   }, [amountIn])
 
-  const { data: quoted, isFetching: quoting } = useQuery({
+  // On-chain AMM quote (constant-product from live reserves) when connected.
+  const web3Quote = useSwapQuote(
+    direction === 'eth_to_fans' ? 'ethToFans' : 'fansToEth',
+    onchain ? toWei(debounced) : 0n,
+  )
+
+  const { data: quoted, isFetching: web2Quoting } = useQuery({
     queryKey: ['lp', 'quote', 'swap', direction, debounced],
     queryFn: () => quote({ action: 'swap', direction, amountIn: debounced }),
-    enabled: Number(debounced) > 0,
+    enabled: !onchain && Number(debounced) > 0,
   })
 
-  const amountOut = quoted?.amountOut ?? ''
-  const impact = quoted?.priceImpactPct
+  const amountOut = onchain ? web3Quote.data?.formatted ?? '' : quoted?.amountOut ?? ''
+  const impact = onchain ? undefined : quoted?.priceImpactPct
+  const quoting = onchain ? web3Quote.isFetching : web2Quoting
 
   function flip() {
     setDirection((d) => (d === 'eth_to_fans' ? 'fans_to_eth' : 'eth_to_fans'))

@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useEthBalance, useFansBalance, useWeb3Context, web3Config } from '@/features/web3'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { lpErrorMessage, mockWalletBalances } from '../api/lp.api'
@@ -17,7 +18,15 @@ import { useAddLiquidity, usePosition, useRemoveLiquidity } from '../hooks/use-l
 export function LiquidityPanel() {
   const [mode, setMode] = useState<'add' | 'remove'>('add')
   const { data: position } = usePosition()
-  const balances = mockWalletBalances()
+
+  // Live wallet balances when a wallet is connected; mock balances otherwise.
+  const { address, isConnected } = useWeb3Context()
+  const onchain = web3Config.enabled && isConnected
+  const ethBal = useEthBalance(onchain ? address ?? undefined : undefined)
+  const fansBal = useFansBalance(onchain ? address ?? undefined : undefined)
+  const balances = onchain
+    ? { eth: Number(ethBal.data?.formatted ?? 0), fans: Number(fansBal.data?.formatted ?? 0) }
+    : mockWalletBalances()
 
   return (
     <div className="flex flex-col gap-3">

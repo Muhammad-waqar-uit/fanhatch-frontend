@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useStakeInfo, useWeb3Context, web3Config } from '@/features/web3'
 import { cn } from '@/shared/lib/cn'
 import { formatNumber } from '@/shared/lib/format'
 import { lpErrorMessage } from '../api/lp.api'
@@ -25,8 +26,17 @@ export function FarmPanel() {
   const claim = useClaim()
   const active = mode === 'stake' ? stake : unstake
 
-  const staked = Number(farm?.staked ?? 0)
-  const earned = Number(farm?.earned ?? 0)
+  // On-chain staked balance + claimable rewards (LP farm) when a wallet is connected.
+  const { address, isConnected } = useWeb3Context()
+  const onchain = web3Config.enabled && isConnected
+  const stakeInfo = useStakeInfo('lp', onchain ? address ?? undefined : undefined)
+
+  const staked = onchain
+    ? Number(stakeInfo.data?.staked.formatted ?? 0)
+    : Number(farm?.staked ?? 0)
+  const earned = onchain
+    ? Number(stakeInfo.data?.earned.formatted ?? 0)
+    : Number(farm?.earned ?? 0)
   const unstaked = Number(position?.shares ?? 0)
   const max = mode === 'stake' ? unstaked : staked
 
