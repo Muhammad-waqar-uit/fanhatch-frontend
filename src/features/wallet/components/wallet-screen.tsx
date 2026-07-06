@@ -18,9 +18,11 @@ import {
 } from '@/features/web3'
 import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { useWalletKeys, useWalletOverview, useWalletRewards } from '../hooks/use-wallet'
+import { useWalletTokens } from '../hooks/use-wallet-tokens'
 import { AssetCard } from './asset-card'
 import { NetWorthHeader } from './net-worth-header'
 import { RewardsCards } from './rewards-cards'
+import { TokenList } from './token-list'
 import { WalletAddressCard } from './wallet-address-card'
 
 /**
@@ -47,6 +49,9 @@ export function WalletScreen() {
   const liveEth = onchain ? ethQuery.data : undefined
   const liveFans = onchain ? fansQuery.data : undefined
 
+  // Priced token list (ETH + $FANS) + net worth (Σ USD value), CMC-backed.
+  const { tokens, netWorthUsd, fansPriceUsd } = useWalletTokens(overview)
+
   // Swap lives on the LP page; these are navigation stubs for now.
   const goToLp = () => router.push('/lp')
   const goToChat = () => router.push('/chat')
@@ -66,7 +71,16 @@ export function WalletScreen() {
           </p>
         ) : (
           <>
-            <NetWorthHeader overview={overview} />
+            <NetWorthHeader
+              overview={{
+                ...overview,
+                netWorthUsd: netWorthUsd.toFixed(2),
+                fansPriceUsd:
+                  fansPriceUsd != null ? String(fansPriceUsd) : overview.fansPriceUsd,
+              }}
+            />
+
+            <TokenList tokens={tokens} />
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <AssetCard
