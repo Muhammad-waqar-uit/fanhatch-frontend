@@ -1,7 +1,14 @@
 /**
- * Shared web3 config — deployed contract addresses + chain + Web3Auth/Biconomy env.
- * Plain constants (no viem import) so it compiles independently. Read by the whole web3 feature.
+ * Shared web3 config — deployed contract addresses + chain + the wagmi/ConnectKit config.
+ *
+ * `web3Config` holds plain constants (enabled flag, chain, rpc, addresses) read across the
+ * whole web3 feature. `wagmiConfig` is the wagmi v2 config via ConnectKit's `getDefaultConfig`
+ * (MetaMask/injected + WalletConnect for other wallets; plain EOA — no smart account).
  */
+import { createConfig, http } from 'wagmi'
+import { sepolia } from 'wagmi/chains'
+import { getDefaultConfig } from 'connectkit'
+
 type Hex = `0x${string}`
 
 export const web3Config = {
@@ -9,19 +16,6 @@ export const web3Config = {
   enabled: process.env.NEXT_PUBLIC_WEB3_ENABLED === 'true',
   chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 11155111),
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL ?? '',
-  web3auth: {
-    clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID ?? '',
-    network: process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK ?? 'sapphire_devnet',
-    // Custom JWT verifier configured in the Web3Auth dashboard (validates our backend id-token).
-    verifier: process.env.NEXT_PUBLIC_WEB3AUTH_VERIFIER ?? 'fanstech-dev',
-    // Only if the verifier above is an AGGREGATE verifier: the wrapped sub-verifier name
-    // (mvmnt uses "custom-auth"). Leave empty for a plain single custom verifier.
-    subVerifier: process.env.NEXT_PUBLIC_WEB3AUTH_SUB_VERIFIER ?? '',
-  },
-  biconomy: {
-    bundlerUrl: process.env.NEXT_PUBLIC_BUNDLER_URL ?? '',
-    paymasterKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_KEY ?? '',
-  },
   addresses: {
     fans: process.env.NEXT_PUBLIC_FANS_ADDRESS as Hex,
     clubFactory: process.env.NEXT_PUBLIC_CLUB_FACTORY_ADDRESS as Hex,
@@ -33,3 +27,26 @@ export const web3Config = {
     clubKeyBeacon: process.env.NEXT_PUBLIC_CLUB_KEY_BEACON_ADDRESS as Hex,
   },
 } as const
+
+/**
+ * wagmi v2 config via ConnectKit's `getDefaultConfig` — MetaMask/injected + WalletConnect
+ * (for other wallets). `walletConnectProjectId` comes from env; empty in dev (MetaMask still
+ * works), and required for the full WalletConnect wallet list once you add a project id.
+ */
+export const wagmiConfig = createConfig(
+  getDefaultConfig({
+    chains: [sepolia],
+    transports: {
+      [sepolia.id]: http(web3Config.rpcUrl || undefined),
+    },
+    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '',
+    appName: 'Fans.tech',
+    ssr: true,
+  }),
+)
+
+declare module 'wagmi' {
+  interface Register {
+    config: typeof wagmiConfig
+  }
+}

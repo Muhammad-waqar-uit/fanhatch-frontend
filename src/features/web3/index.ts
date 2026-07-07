@@ -1,23 +1,13 @@
 // Public surface of the web3 feature.
-// Auth + smart account + write actions (this file's owner) plus read hooks (Agent B).
+// wagmi/ConnectKit wallet + write actions plus read hooks.
 
-export { web3Config } from './config'
-export { Web3Provider, useWeb3Context, type Web3ContextValue, type Web3Status } from './provider'
+export { web3Config, wagmiConfig } from './config'
+export { Web3Provider, useWeb3Context, useWallet, type Web3ContextValue, type Web3Status } from './provider'
 export { useSmartAccount, type UseSmartAccount } from './use-smart-account'
-export { WalletChip } from './connect-button'
-export {
-  isWeb3Available,
-  connectWithToken,
-  logout,
-  restoreSession,
-  getSmartAccount,
-  getSmartAccountAddress,
-  sendUserOp,
-  type Web3Transaction,
-} from './client'
+export { ConnectButton, WalletChip } from './connect-button'
 
 // Write-action mutation hooks.
 export * from './actions'
 
-// Read hooks (owned by Agent B).
+// Read hooks.
 export * from './hooks'

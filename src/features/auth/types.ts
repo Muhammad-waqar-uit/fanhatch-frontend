@@ -17,7 +17,5 @@ export interface LoginInput {
 /** Shape of `POST /auth/login` (and `/auth/register`) responses. */
 export interface AuthResponse {
   accessToken: string
-  /** Backend-minted Web3Auth SFA id-token (RS256). Absent in mock/web2 mode. */
-  web3authToken?: string
   user: AuthUser
 }

@@ -24,7 +24,7 @@ export {
   type ClaimParams,
 } from './staking'
 export {
-  approveTx,
+  ensureAllowance,
   resolveClubKeyAddress,
   withSlippageUp,
   withSlippageDown,

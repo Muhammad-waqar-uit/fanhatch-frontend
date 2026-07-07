@@ -1,38 +1,37 @@
 'use client'
 
 /**
- * useSmartAccount() — the interface every write action (and Agent B's reads) assume.
+ * useSmartAccount() — the wallet interface every write action assumes.
  *
- * Returns `{ address, isConnected, login, logout, sendTx, sendTxBatch }`.
- * - `sendTx(to, data, value?)` builds + sends a single sponsored userop and waits for the receipt.
- * - `sendTxBatch(txs)` does the same for a batch (e.g. ERC20 approve + action) atomically.
+ * Plain EOA (MetaMask via wagmi) — no smart account, no gasless. Returns
+ * `{ address, isConnected, sendTx }` where `sendTx(to, data, value?)` sends one
+ * transaction and waits for its receipt, returning the on-chain tx hash.
  */
 
 import { useCallback } from 'react'
 import type { Address, Hex } from 'viem'
-import { sendUserOp, type Web3Transaction } from './client'
-import { useWeb3Context } from './provider'
+import { useAccount } from 'wagmi'
+import { sendTransaction, waitForTransactionReceipt } from 'wagmi/actions'
+import { wagmiConfig } from './config'
 
 export interface UseSmartAccount {
   address: Address | null
   isConnected: boolean
-  login: () => Promise<void>
-  logout: () => Promise<void>
-  /** Send a single userop (to, calldata, optional ETH value) and wait for the receipt. */
+  /** Send a single tx (to, calldata, optional ETH value) and wait for the receipt. */
   sendTx: (to: Address, data?: Hex, value?: bigint) => Promise<Hex>
-  /** Send a batch of calls as one atomic userop (e.g. approve + action). */
-  sendTxBatch: (txs: Web3Transaction[]) => Promise<Hex>
 }
 
 export function useSmartAccount(): UseSmartAccount {
-  const { address, isConnected, login, logout } = useWeb3Context()
+  const { address, isConnected } = useAccount()
 
-  const sendTx = useCallback(
-    (to: Address, data?: Hex, value?: bigint) => sendUserOp({ to, data, value }),
-    [],
-  )
+  const sendTx = useCallback(async (to: Address, data?: Hex, value?: bigint): Promise<Hex> => {
+    const hash = await sendTransaction(wagmiConfig, { to, data, value })
+    await waitForTransactionReceipt(wagmiConfig, { hash })
+    return hash
+  }, [])
 
-  const sendTxBatch = useCallback((txs: Web3Transaction[]) => sendUserOp(txs), [])
-
-  return { address, isConnected, login, logout, sendTx, sendTxBatch }
+  return { address: (address as Address | undefined) ?? null, isConnected, sendTx }
 }
+
+/** Alias kept for callers that prefer the `useWallet` name. */
+export const useWalletAccount = useSmartAccount

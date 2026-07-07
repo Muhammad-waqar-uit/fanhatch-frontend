@@ -16,7 +16,7 @@ import { encodeFunctionData, type Address, type Hex } from 'viem'
 import { stakingManagerAbi } from '../abis'
 import { web3Config } from '../config'
 import { useSmartAccount } from '../use-smart-account'
-import { approveTx } from './shared'
+import { ensureAllowance } from './shared'
 
 export interface StakeParams {
   amount: bigint
@@ -36,18 +36,21 @@ export interface ClaimParams {
 }
 
 export function useStake() {
-  const { sendTxBatch } = useSmartAccount()
+  const { address, sendTx } = useSmartAccount()
 
   return useMutation<Hex, Error, StakeParams>({
     mutationFn: async ({ amount, farm, stakingToken }) => {
+      if (!address) throw new Error('Connect your wallet to stake.')
       const farmAddress = farm ?? web3Config.addresses.stakingFans
       const token = stakingToken ?? web3Config.addresses.fans
+      // stake pulls the staking token via transferFrom — approve (if needed) first.
+      await ensureAllowance({ token, owner: address, spender: farmAddress, amount, sendTx })
       const data = encodeFunctionData({
         abi: stakingManagerAbi,
         functionName: 'stake',
         args: [amount],
       }) as Hex
-      return sendTxBatch([approveTx(token, farmAddress, amount), { to: farmAddress, data }])
+      return sendTx(farmAddress, data)
     },
   })
 }

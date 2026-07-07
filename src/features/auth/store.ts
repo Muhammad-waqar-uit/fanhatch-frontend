@@ -33,15 +33,9 @@ function decodeJwtPayload(token: string): JwtPayload | null {
 interface AuthState {
   token: string | null
   user: AuthUser | null
-  /**
-   * Backend-minted Web3Auth SFA id-token from the login/register response.
-   * In-memory only (short-lived, never persisted). On reload the Web3Provider
-   * re-mints it via `GET /auth/web3auth/token`.
-   */
-  web3authToken: string | null
-  /** Persist the token to localStorage and store the principal (+ id-token) in memory. */
-  setAuth: (token: string, user: AuthUser, web3authToken?: string | null) => void
-  /** Patch fields on the in-memory user (e.g. after deriving the wallet address). */
+  /** Persist the token to localStorage and store the principal in memory. */
+  setAuth: (token: string, user: AuthUser) => void
+  /** Patch fields on the in-memory user (e.g. after linking the wallet address). */
   setUser: (patch: Partial<AuthUser>) => void
   /** Clear the session and remove the persisted token. */
   logout: () => void
@@ -52,16 +46,15 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
-  web3authToken: null,
-  setAuth: (token, user, web3authToken = null) => {
+  setAuth: (token, user) => {
     if (isBrowser()) localStorage.setItem(TOKEN_KEY, token)
-    set({ token, user, web3authToken })
+    set({ token, user })
   },
   setUser: (patch) =>
     set((s) => ({ user: s.user ? { ...s.user, ...patch } : s.user })),
   logout: () => {
     if (isBrowser()) localStorage.removeItem(TOKEN_KEY)
-    set({ token: null, user: null, web3authToken: null })
+    set({ token: null, user: null })
   },
   hydrate: () => {
     if (!isBrowser()) return

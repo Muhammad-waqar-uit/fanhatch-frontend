@@ -1,11 +1,15 @@
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ConnectKitProvider } from 'connectkit'
 import { useState, type ReactNode } from 'react'
 import { AuthProvider } from '@/features/auth'
 import { Web3Provider } from '@/features/web3'
 
-/** Global client providers (TanStack Query + auth store hydration). */
+/**
+ * Global client providers. Wagmi (via `Web3Provider`) sits outside the single
+ * QueryClient; ConnectKit is mounted just inside it, then AuthProvider + app.
+ */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -17,10 +21,12 @@ export function Providers({ children }: { children: ReactNode }) {
   )
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Web3Provider>{children}</Web3Provider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <Web3Provider>
+      <QueryClientProvider client={queryClient}>
+        <ConnectKitProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ConnectKitProvider>
+      </QueryClientProvider>
+    </Web3Provider>
   )
 }

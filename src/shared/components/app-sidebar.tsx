@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth'
-import { WalletChip } from '@/features/web3'
+import { ConnectButton } from '@/features/web3'
 import { NAV_ITEMS } from '@/config/nav'
 import { cn } from '@/shared/lib/cn'
 
@@ -47,10 +47,9 @@ export function AppSidebar() {
           )
         })}
       </nav>
-      {/* Background wallet chip — reflects the SFA-derived smart account; null when
-          disabled/disconnected. No connect button (the wallet is created on login). */}
+      {/* ConnectKit connect button (MetaMask / WalletConnect); null when web3 is disabled. */}
       <div className="mt-auto pt-2">
-        <WalletChip className="w-full" />
+        <ConnectButton className="w-full" />
       </div>
       {user ? (
         <div className="mt-2 flex flex-col gap-2 rounded-[var(--radius)] bg-[var(--color-surface-2)] p-3">

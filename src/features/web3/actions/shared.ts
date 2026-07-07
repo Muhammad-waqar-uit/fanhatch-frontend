@@ -9,9 +9,8 @@ import { createPublicClient, encodeFunctionData, http, type Address, type Hex } 
 import { sepolia } from 'viem/chains'
 import { web3Config } from '../config'
 import { platformTokenAbi, clubFactoryAbi } from '../abis'
-import type { Web3Transaction } from '../client'
 
-/** Minimal read client for action-side lookups (e.g. resolving a club's key address). */
+/** Minimal read client for action-side lookups (allowance, club-key resolution). */
 let publicClient: ReturnType<typeof createPublicClient> | null = null
 function getPublicClient() {
   if (!publicClient) {
@@ -30,16 +29,38 @@ export function withSlippageDown(amount: bigint, slippageBps = 100n): bigint {
   return (amount * (10_000n - slippageBps)) / 10_000n
 }
 
-/** Encode an ERC20 `approve(spender, amount)` call as a userop transaction. */
-export function approveTx(token: Address, spender: Address, amount: bigint): Web3Transaction {
-  return {
-    to: token,
-    data: encodeFunctionData({
-      abi: platformTokenAbi,
-      functionName: 'approve',
-      args: [spender, amount],
-    }) as Hex,
-  }
+/** Signature of the wallet's single-tx sender (from `useSmartAccount().sendTx`). */
+type SendTx = (to: Address, data?: Hex, value?: bigint) => Promise<Hex>
+
+/**
+ * Ensure `owner` has approved at least `amount` of `token` to `spender`. Reads the current
+ * allowance (viem) and, only if insufficient, sends an `approve(spender, amount)` tx and waits
+ * for its receipt (via `sendTx`). No-op when the allowance already covers `amount`.
+ */
+export async function ensureAllowance(params: {
+  token: Address
+  owner: Address
+  spender: Address
+  amount: bigint
+  sendTx: SendTx
+}): Promise<void> {
+  const { token, owner, spender, amount, sendTx } = params
+  if (amount <= 0n) return
+
+  const allowance = (await getPublicClient().readContract({
+    address: token,
+    abi: platformTokenAbi,
+    functionName: 'allowance',
+    args: [owner, spender],
+  })) as bigint
+  if (allowance >= amount) return
+
+  const data = encodeFunctionData({
+    abi: platformTokenAbi,
+    functionName: 'approve',
+    args: [spender, amount],
+  }) as Hex
+  await sendTx(token, data)
 }
 
 /**

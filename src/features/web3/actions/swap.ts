@@ -13,7 +13,7 @@ import { encodeFunctionData, type Hex } from 'viem'
 import { fansSwapAbi } from '../abis'
 import { web3Config } from '../config'
 import { useSmartAccount } from '../use-smart-account'
-import { approveTx, withSlippageDown } from './shared'
+import { ensureAllowance, withSlippageDown } from './shared'
 
 export type SwapDirection = 'ethForFans' | 'fansForEth'
 
@@ -29,7 +29,7 @@ export interface SwapParams {
 }
 
 export function useSwap() {
-  const { sendTx, sendTxBatch } = useSmartAccount()
+  const { address, sendTx } = useSmartAccount()
 
   return useMutation<Hex, Error, SwapParams>({
     mutationFn: async ({ direction, amountIn, minOut, quoteOut, slippageBps }) => {
@@ -46,12 +46,21 @@ export function useSwap() {
         return sendTx(swap, data, amountIn)
       }
 
+      // fansForEth pulls $FANS via transferFrom — approve (if needed) first.
+      if (!address) throw new Error('Connect your wallet to swap.')
+      await ensureAllowance({
+        token: web3Config.addresses.fans,
+        owner: address,
+        spender: swap,
+        amount: amountIn,
+        sendTx,
+      })
       const data = encodeFunctionData({
         abi: fansSwapAbi,
         functionName: 'swapFansForEth',
         args: [amountIn, minOutFinal],
       }) as Hex
-      return sendTxBatch([approveTx(web3Config.addresses.fans, swap, amountIn), { to: swap, data }])
+      return sendTx(swap, data)
     },
   })
 }

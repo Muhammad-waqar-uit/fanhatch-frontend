@@ -26,8 +26,8 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: ({ mode = 'login', ...input }: LoginInput & { mode?: 'login' | 'register' }) =>
       mode === 'register' ? register(input) : login(input),
-    onSuccess: ({ accessToken, user, web3authToken }) => {
-      setAuth(accessToken, user, web3authToken)
+    onSuccess: ({ accessToken, user }) => {
+      setAuth(accessToken, user)
       router.push('/')
     },
   })
@@ -43,8 +43,8 @@ export function useSiweMutation() {
 
   return useMutation({
     mutationFn: () => connectAndSignIn(),
-    onSuccess: ({ accessToken, user, web3authToken }) => {
-      setAuth(accessToken, user, web3authToken)
+    onSuccess: ({ accessToken, user }) => {
+      setAuth(accessToken, user)
       router.push('/')
     },
   })
