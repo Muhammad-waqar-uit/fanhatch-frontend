@@ -18,7 +18,7 @@ import {
 } from '@/features/web3'
 import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { useWalletKeys, useWalletOverview, useWalletRewards } from '../hooks/use-wallet'
-import { useWalletTokens } from '../hooks/use-wallet-tokens'
+import type { WalletToken } from '../types'
 import { AssetCard } from './asset-card'
 import { NetWorthHeader } from './net-worth-header'
 import { RewardsCards } from './rewards-cards'
@@ -49,8 +49,20 @@ export function WalletScreen() {
   const liveEth = onchain ? ethQuery.data : undefined
   const liveFans = onchain ? fansQuery.data : undefined
 
-  // Priced token list (ETH + $FANS) + net worth (Σ USD value), CMC-backed.
-  const { tokens, netWorthUsd, fansPriceUsd } = useWalletTokens(overview)
+  // Lean token balances list (ETH + $FANS) — live on-chain balance when connected,
+  // else the web2 sim balances. No fiat pricing.
+  const tokens: WalletToken[] = [
+    {
+      symbol: 'ETH',
+      name: 'Ethereum',
+      balance: Number(liveEth?.formatted ?? overview?.balances.eth ?? 0),
+    },
+    {
+      symbol: '$FANS',
+      name: 'Fans Token',
+      balance: Number(liveFans?.formatted ?? overview?.balances.fans ?? 0),
+    },
+  ]
 
   // Swap lives on the LP page; these are navigation stubs for now.
   const goToLp = () => router.push('/lp')
@@ -71,14 +83,7 @@ export function WalletScreen() {
           </p>
         ) : (
           <>
-            <NetWorthHeader
-              overview={{
-                ...overview,
-                netWorthUsd: netWorthUsd.toFixed(2),
-                fansPriceUsd:
-                  fansPriceUsd != null ? String(fansPriceUsd) : overview.fansPriceUsd,
-              }}
-            />
+            <NetWorthHeader overview={overview} />
 
             <TokenList tokens={tokens} />
 

@@ -5,9 +5,8 @@ import type { WalletToken } from '../types'
 import { TokenRow } from './token-row'
 
 /**
- * Tokens section — a single Card of token rows (ETH, $FANS) with logo, name,
- * balance, USD price/value and a 24h % chip. Net worth (Σ valueUsd) is surfaced
- * by the NetWorthHeader above; this component only renders the list.
+ * Tokens section — a single Card of token rows (ETH, $FANS) with name + balance.
+ * Balance-only; no fiat pricing.
  */
 export function TokenList({ tokens }: { tokens: WalletToken[] }) {
   return (

@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * "Your wallet" card — the SFA-derived Biconomy smart-account address, shown prominently
- * on the Wallet screen. Prefers the live address (from the Web3Provider); falls back to the
+ * "Your wallet" card — the connected wallet address (MetaMask via ConnectKit), shown
+ * prominently on the Wallet screen. Prefers the live address (from wagmi); falls back to the
  * persisted `user.walletAddress`. Renders nothing when web3 is disabled or no address exists
  * (pure web2 / mock mode is unaffected).
  */
