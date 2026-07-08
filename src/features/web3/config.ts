@@ -19,12 +19,18 @@ export const web3Config = {
   addresses: {
     fans: process.env.NEXT_PUBLIC_FANS_ADDRESS as Hex,
     clubFactory: process.env.NEXT_PUBLIC_CLUB_FACTORY_ADDRESS as Hex,
+    /** @deprecated Legacy FansSwap AMM — superseded by the Uniswap v4 hybrid (fansV4Router + fansLpVault). Kept for reference only. */
     fansSwap: process.env.NEXT_PUBLIC_FANS_SWAP_ADDRESS as Hex,
     feeDistributor: process.env.NEXT_PUBLIC_FEE_DISTRIBUTOR_ADDRESS as Hex,
     governance: process.env.NEXT_PUBLIC_GOVERNANCE_ADDRESS as Hex,
     stakingFans: process.env.NEXT_PUBLIC_STAKING_FANS_ADDRESS as Hex,
     stakingLp: process.env.NEXT_PUBLIC_STAKING_LP_ADDRESS as Hex,
     clubKeyBeacon: process.env.NEXT_PUBLIC_CLUB_KEY_BEACON_ADDRESS as Hex,
+    // Uniswap v4 hybrid — deployed swap/liquidity stack (Sepolia).
+    poolManager: process.env.NEXT_PUBLIC_POOL_MANAGER_ADDRESS as Hex,
+    fansHook: process.env.NEXT_PUBLIC_FANS_HOOK_ADDRESS as Hex,
+    fansV4Router: process.env.NEXT_PUBLIC_FANS_V4_ROUTER_ADDRESS as Hex,
+    fansLpVault: process.env.NEXT_PUBLIC_FANS_LP_VAULT_ADDRESS as Hex,
   },
 } as const
 

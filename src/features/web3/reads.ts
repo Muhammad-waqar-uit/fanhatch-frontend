@@ -18,7 +18,7 @@ import {
   platformTokenAbi,
   clubFactoryAbi,
   clubKeyAbi,
-  fansSwapAbi,
+  fansLpVaultAbi,
   governanceModuleAbi,
   stakingManagerAbi,
 } from './abis'
@@ -149,37 +149,86 @@ export async function ethBalance(user: string): Promise<Amount> {
 }
 
 /**
- * Constant-product (x·y=k) swap quote computed locally from on-chain reserves,
- * applying the same 0.3% fee as `FansSwap._amountOut` (FEE_BPS = 30 / 10_000).
+ * FansHook per-swap fee (bps), always taken in $FANS (currency1). Default 150 = 1.5%.
+ * Mirrors `FansHook.feeBps`; the v4 pool's own `fee` is 0.
+ */
+const HOOK_FEE_BPS = 150n
+
+/**
+ * Constant-product (x·y=k) swap quote computed locally from the v4 pool's reserves,
+ * which — for the vault's single full-range position — are exposed by
+ * `FansLPVault.getReserves()`. The pool has a 0 LP fee; the FansHook's 1.5% fee is
+ * always denominated in $FANS, so we apply it to the $FANS leg of the trade.
  * Returns the expected output amount for `amountIn` (in the input token's wei).
  */
 export async function swapQuote(direction: SwapDirection, amountIn: bigint): Promise<Amount> {
-  if (!canRead() || amountIn <= 0n || !isAddress(web3Config.addresses.fansSwap)) return ZERO
+  if (!canRead() || amountIn <= 0n || !isAddress(web3Config.addresses.fansLpVault)) return ZERO
   try {
-    const [reserveEth, reserveFans] = await Promise.all([
-      publicClient.readContract({
-        address: web3Config.addresses.fansSwap,
-        abi: fansSwapAbi,
-        functionName: 'reserveEth',
-      }),
-      publicClient.readContract({
-        address: web3Config.addresses.fansSwap,
-        abi: fansSwapAbi,
-        functionName: 'reserveFans',
-      }),
-    ])
+    const [reserveEth, reserveFans] = (await publicClient.readContract({
+      address: web3Config.addresses.fansLpVault,
+      abi: fansLpVaultAbi,
+      functionName: 'getReserves',
+    })) as readonly [bigint, bigint]
     if (reserveEth <= 0n || reserveFans <= 0n) return ZERO
 
-    const [reserveIn, reserveOut] =
-      direction === 'ethToFans' ? [reserveEth, reserveFans] : [reserveFans, reserveEth]
-
-    // amountInWithFee = amountIn * (10000 - 30); out = (amountInWithFee * reserveOut) / (reserveIn * 10000 + amountInWithFee)
-    const amountInWithFee = amountIn * 9970n
-    const raw = (amountInWithFee * reserveOut) / (reserveIn * 10_000n + amountInWithFee)
-    // Output token decimals match input for both ETH (18) and $FANS (18).
+    if (direction === 'ethToFans') {
+      // Exact-in ETH → FANS: constant-product out, then take the fee from the $FANS output.
+      const grossOut = (amountIn * reserveFans) / (reserveEth + amountIn)
+      const raw = (grossOut * (10_000n - HOOK_FEE_BPS)) / 10_000n
+      return amount(raw)
+    }
+    // Exact-in FANS → ETH: fee taken from the $FANS input, remainder swapped for ETH.
+    const netIn = (amountIn * (10_000n - HOOK_FEE_BPS)) / 10_000n
+    const raw = (netIn * reserveEth) / (reserveFans + netIn)
     return amount(raw)
   } catch {
     return ZERO
+  }
+}
+
+/**
+ * A user's FANS-LP position in the vault: their share balance, the vault's total supply,
+ * and the ETH/$FANS the shares are currently redeemable for (pro-rata of `getReserves()`).
+ */
+export async function lpPosition(user: string): Promise<{
+  shares: Amount
+  totalShares: Amount
+  ethReserve: Amount
+  fansReserve: Amount
+  ethShare: Amount
+  fansShare: Amount
+}> {
+  const zero = {
+    shares: ZERO,
+    totalShares: ZERO,
+    ethReserve: ZERO,
+    fansReserve: ZERO,
+    ethShare: ZERO,
+    fansShare: ZERO,
+  }
+  if (!canRead() || !isAddress(user) || !isAddress(web3Config.addresses.fansLpVault)) return zero
+  try {
+    const vault = web3Config.addresses.fansLpVault
+    const [shares, totalShares, reserves] = await Promise.all([
+      publicClient.readContract({ address: vault, abi: fansLpVaultAbi, functionName: 'balanceOf', args: [user as Address] }),
+      publicClient.readContract({ address: vault, abi: fansLpVaultAbi, functionName: 'totalSupply' }),
+      publicClient.readContract({ address: vault, abi: fansLpVaultAbi, functionName: 'getReserves' }),
+    ])
+    const [ethReserve, fansReserve] = reserves as readonly [bigint, bigint]
+    const total = totalShares as bigint
+    const bal = shares as bigint
+    const ethShare = total > 0n ? (ethReserve * bal) / total : 0n
+    const fansShare = total > 0n ? (fansReserve * bal) / total : 0n
+    return {
+      shares: amount(bal),
+      totalShares: amount(total),
+      ethReserve: { raw: ethReserve, formatted: formatEther(ethReserve) },
+      fansReserve: amount(fansReserve),
+      ethShare: { raw: ethShare, formatted: formatEther(ethShare) },
+      fansShare: amount(fansShare),
+    }
+  } catch {
+    return zero
   }
 }
 

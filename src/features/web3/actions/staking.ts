@@ -8,7 +8,7 @@
  *
  * There is one StakingManager per stake token. Defaults target the $FANS farm
  * (`stakingFans`, staking token = $FANS); pass `farm` + `stakingToken` for the LP farm
- * (`stakingLp`, staking token = the FansSwap LP token, i.e. the FansSwap contract itself).
+ * (`stakingLp`, staking token = the FANS-LP vault token, i.e. the FansLPVault ERC-20).
  */
 
 import { useMutation } from '@tanstack/react-query'

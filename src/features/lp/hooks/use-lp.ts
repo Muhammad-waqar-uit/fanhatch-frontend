@@ -135,11 +135,11 @@ export function useStake() {
   return useMutation({
     mutationFn: async (shares: string) => {
       if (onchain) {
-        // LP farm: stake the FansSwap LP token into the `stakingLp` StakingManager.
+        // LP farm: stake the FANS-LP vault token into the `stakingLp` StakingManager.
         return onchainStake.mutateAsync({
           amount: toWei(shares),
           farm: web3Config.addresses.stakingLp,
-          stakingToken: web3Config.addresses.fansSwap,
+          stakingToken: web3Config.addresses.fansLpVault,
         })
       }
       return stake(shares)
