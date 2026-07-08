@@ -57,6 +57,31 @@ export type SwapDirection = 'ethToFans' | 'fansToEth'
 const stakingAddress = (farm: StakingFarm): string =>
   farm === 'lp' ? web3Config.addresses.stakingLp : web3Config.addresses.stakingFans
 
+/** The v4 pool's current reserves (ETH, $FANS) — the vault's single full-range position. */
+export async function poolReserves(): Promise<{ eth: bigint; fans: bigint }> {
+  if (!canRead()) return { eth: 0n, fans: 0n }
+  try {
+    const [eth, fans] = (await publicClient.readContract({
+      address: web3Config.addresses.fansLpVault,
+      abi: fansLpVaultAbi,
+      functionName: 'getReserves',
+    })) as [bigint, bigint]
+    return { eth, fans }
+  } catch {
+    return { eth: 0n, fans: 0n }
+  }
+}
+
+/** Current network gas price (wei); 0n on failure. Used to estimate the swap network fee. */
+export async function currentGasPrice(): Promise<bigint> {
+  if (!canRead()) return 0n
+  try {
+    return await publicClient.getGasPrice()
+  } catch {
+    return 0n
+  }
+}
+
 /** Resolve a club's ClubKey contract address from the factory (`clubKeyOf`). */
 export async function resolveClubKey(clubId: bigint): Promise<Address | null> {
   if (!canRead() || !isAddress(web3Config.addresses.clubFactory)) return null
