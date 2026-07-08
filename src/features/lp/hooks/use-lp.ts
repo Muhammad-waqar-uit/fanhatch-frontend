@@ -5,7 +5,7 @@
  * cached; every mutation invalidates the trio since the AMM state is shared.
  *
  * Each mutation branches on `web3Config.enabled && isConnected`:
- *   - connected  → run the sponsored on-chain userop (FansSwap / StakingManager)
+ *   - connected  → run the on-chain tx via the connected wallet (v4 router / vault / StakingManager)
  *                  and, on success, refresh both the web2 caches and the web3 reads;
  *   - otherwise  → keep the existing web2 API call (mock or backend) exactly as-is.
  * Amounts arrive as decimal strings; on-chain paths convert to 18-decimal wei.

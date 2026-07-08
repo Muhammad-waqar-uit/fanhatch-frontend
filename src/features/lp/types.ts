@@ -1,13 +1,13 @@
 /**
  * Domain types for the LP feature (liquidity + farm + swap).
- * Mirrors the web2 API contract (simulated FansSwap + StakingManager).
+ * Mirrors the web2 API contract (mock v4 pool + StakingManager).
  * All on-chain-style amounts are decimal strings.
  */
 
 /** Which side of the pool a swap moves. */
 export type SwapDirection = 'eth_to_fans' | 'fans_to_eth'
 
-/** The AMM pool singleton (constant-product, 0.3% fee). GET /lp/pool. */
+/** The AMM pool singleton (constant-product, 1.5% fee). GET /lp/pool. */
 export interface Pool {
   reserveEth: string
   reserveFans: string

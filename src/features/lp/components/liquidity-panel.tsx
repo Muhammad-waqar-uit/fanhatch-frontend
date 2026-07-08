@@ -1,212 +1,241 @@
 'use client'
 
 /**
- * Liquidity: add (ETH + $FANS deposit) or remove (LP shares), with the caller's
- * current position summary. "Farmers receive a share of swap fees." Mutations
- * surface 400 (insufficient balance) inline.
+ * Liquidity — provide ETH + $FANS to the v4 pool (mints FANS-LP via the vault) or
+ * withdraw FANS-LP back to the underlying. Shows the caller's live on-chain position.
+ * Stake the FANS-LP in the Farm tab to earn from the 1.5% trade fee.
  */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useModal } from 'connectkit'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { useEthBalance, useFansBalance, useWeb3Context, web3Config } from '@/features/web3'
-import { cn } from '@/shared/lib/cn'
-import { formatNumber, formatUsd } from '@/shared/lib/format'
-import { lpErrorMessage, mockWalletBalances } from '../api/lp.api'
+import {
+  useEthBalance,
+  useFansBalance,
+  useLpPosition,
+  useWeb3Context,
+  web3Config,
+} from '@/features/web3'
+import { formatNumber } from '@/shared/lib/format'
+import { mockWalletBalances } from '../api/lp.api'
 import { useAddLiquidity, usePosition, useRemoveLiquidity } from '../hooks/use-lp'
+import { DetailRow, Segmented, StatTile, TOKENS, TokenField, num } from './token-ui'
 
 export function LiquidityPanel() {
   const [mode, setMode] = useState<'add' | 'remove'>('add')
-  const { data: position } = usePosition()
 
-  // Live wallet balances when a wallet is connected; mock balances otherwise.
   const { address, isConnected } = useWeb3Context()
-  const onchain = web3Config.enabled && isConnected
-  const ethBal = useEthBalance(onchain ? address ?? undefined : undefined)
-  const fansBal = useFansBalance(onchain ? address ?? undefined : undefined)
-  const balances = onchain
-    ? { eth: Number(ethBal.data?.formatted ?? 0), fans: Number(fansBal.data?.formatted ?? 0) }
-    : mockWalletBalances()
+  const web3On = web3Config.enabled
+  const connected = web3On && isConnected
+  const { setOpen: openWalletModal } = useModal()
+
+  const ethBal = useEthBalance(connected ? address ?? undefined : undefined)
+  const fansBal = useFansBalance(connected ? address ?? undefined : undefined)
+  const balances = connected
+    ? { eth: num(ethBal.data?.formatted), fans: num(fansBal.data?.formatted) }
+    : web3On
+      ? null
+      : mockWalletBalances()
+
+  const onchainPos = useLpPosition(connected ? address ?? undefined : undefined)
+  const web2Pos = usePosition()
+  const pos = useMemo(() => {
+    if (connected && onchainPos.data) {
+      const shares = num(onchainPos.data.shares.formatted)
+      const total = num(onchainPos.data.totalShares.formatted)
+      return {
+        shares,
+        eth: num(onchainPos.data.ethShare.formatted),
+        fans: num(onchainPos.data.fansShare.formatted),
+        sharePct: total > 0 ? (shares / total) * 100 : 0,
+      }
+    }
+    return {
+      shares: num(web2Pos.data?.shares),
+      eth: num(web2Pos.data?.ethShare),
+      fans: num(web2Pos.data?.fansShare),
+      sharePct: 0,
+    }
+  }, [connected, onchainPos.data, web2Pos.data])
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Position summary */}
+      {/* Position */}
       <Card>
         <CardContent className="pt-4">
-          <h2 className="text-sm font-semibold text-[var(--color-fg)]">Your Position</h2>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-            <Stat label="LP shares" value={formatNumber(Number(position?.shares ?? 0))} />
-            <Stat
-              label="Pooled ETH"
-              value={formatNumber(Number(position?.ethShare ?? 0), { compact: false })}
-            />
-            <Stat
-              label="Pooled $FANS"
-              value={formatNumber(Number(position?.fansShare ?? 0), { compact: true })}
-            />
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[var(--color-fg)]">Your position</h2>
+            {pos.sharePct > 0 ? (
+              <span className="text-xs text-[var(--color-muted)]">{pos.sharePct.toFixed(2)}% of pool</span>
+            ) : null}
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <StatTile label="FANS-LP" value={formatNumber(pos.shares, { compact: true })} />
+            <StatTile label="Pooled ETH" value={formatNumber(pos.eth, { compact: false })} />
+            <StatTile label="Pooled $FANS" value={formatNumber(pos.fans, { compact: true })} />
           </div>
           <p className="mt-3 text-xs text-[var(--color-muted)]">
-            Value {formatUsd(Number(position?.valueUsd ?? 0))} · Farmers receive a share of swap fees.
+            Stake your FANS-LP in the <span className="text-[var(--color-fg)]">Farm</span> tab to earn a
+            share of the 1.5% trade fee, paid in $FANS.
           </p>
         </CardContent>
       </Card>
 
-      {/* Add / Remove toggle */}
-      <div className="inline-flex w-full rounded-[var(--radius)] border border-[var(--color-border)] p-1">
-        {(['add', 'remove'] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            className={cn(
-              'flex-1 rounded-[calc(var(--radius)-0.25rem)] py-1.5 text-sm font-medium capitalize transition-colors',
-              mode === m
-                ? 'bg-[var(--color-surface-2)] text-[var(--color-fg)]'
-                : 'text-[var(--color-muted)]',
-            )}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
+      <Segmented options={['add', 'remove'] as const} value={mode} onChange={setMode} />
 
       {mode === 'add' ? (
-        <AddForm ethAvailable={balances.eth} fansAvailable={balances.fans} />
+        <AddForm
+          balances={balances}
+          web3On={web3On}
+          connected={connected}
+          onConnect={() => openWalletModal(true)}
+        />
       ) : (
-        <RemoveForm shares={Number(position?.shares ?? 0)} />
+        <RemoveForm
+          shares={pos.shares}
+          web3On={web3On}
+          connected={connected}
+          onConnect={() => openWalletModal(true)}
+        />
       )}
     </div>
   )
 }
 
-function AddForm({ ethAvailable, fansAvailable }: { ethAvailable: number; fansAvailable: number }) {
+function AddForm({
+  balances,
+  web3On,
+  connected,
+  onConnect,
+}: {
+  balances: { eth: number; fans: number } | null
+  web3On: boolean
+  connected: boolean
+  onConnect: () => void
+}) {
   const [ethIn, setEthIn] = useState('')
   const [fansIn, setFansIn] = useState('')
   const { mutate, isPending, error, reset } = useAddLiquidity()
 
-  const disabled = isPending || Number(ethIn) <= 0 || Number(fansIn) <= 0
+  const overEth = balances != null && num(ethIn) > balances.eth
+  const overFans = balances != null && num(fansIn) > balances.fans
+  const cta = web3On && !connected
+    ? { label: 'Connect wallet', disabled: false }
+    : num(ethIn) <= 0 || num(fansIn) <= 0
+      ? { label: 'Enter amounts', disabled: true }
+      : overEth || overFans
+        ? { label: `Insufficient ${overEth ? 'ETH' : '$FANS'}`, disabled: true }
+        : isPending
+          ? { label: 'Adding…', disabled: true }
+          : { label: 'Add liquidity', disabled: false }
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-3 pt-4">
-        <Field
-          label="Deposit ETH"
-          available={ethAvailable}
+      <CardContent className="flex flex-col gap-1.5 pt-4">
+        <TokenField
+          label="Deposit"
+          token={TOKENS.eth}
+          available={balances?.eth}
           value={ethIn}
-          onChange={(v) => {
-            reset()
-            setEthIn(v)
-          }}
+          editable
+          onChange={(v) => { reset(); setEthIn(v) }}
+          onMax={balances ? () => setEthIn(String(balances.eth)) : undefined}
         />
-        <Field
-          label="Deposit $FANS"
-          available={fansAvailable}
+        <TokenField
+          label="Deposit"
+          token={TOKENS.fans}
+          available={balances?.fans}
           value={fansIn}
-          onChange={(v) => {
-            reset()
-            setFansIn(v)
-          }}
+          editable
+          onChange={(v) => { reset(); setFansIn(v) }}
+          onMax={balances ? () => setFansIn(String(balances.fans)) : undefined}
         />
+        <dl className="mt-1 rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2.5 text-xs">
+          <DetailRow term="You receive">FANS-LP (pool share)</DetailRow>
+          <p className="mt-1 text-[var(--color-muted)]">
+            Added at the current pool ratio — any excess of either token is refunded.
+          </p>
+        </dl>
         {error ? (
-          <p className="text-xs text-[var(--color-negative)]" role="alert">
-            {lpErrorMessage(error)}
+          <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
+            {error instanceof Error ? error.message : 'Could not add liquidity.'}
           </p>
         ) : null}
         <Button
-          disabled={disabled}
-          onClick={() =>
-            mutate(
-              { ethIn, fansIn },
-              {
-                onSuccess: () => {
-                  setEthIn('')
-                  setFansIn('')
-                },
-              },
-            )
-          }
+          className="mt-2"
+          disabled={cta.disabled}
+          onClick={() => {
+            if (web3On && !connected) return onConnect()
+            mutate({ ethIn, fansIn }, { onSuccess: () => { setEthIn(''); setFansIn('') } })
+          }}
         >
-          {isPending ? 'Adding…' : 'Add liquidity'}
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {cta.label}
         </Button>
       </CardContent>
     </Card>
   )
 }
 
-function RemoveForm({ shares }: { shares: number }) {
+function RemoveForm({
+  shares,
+  web3On,
+  connected,
+  onConnect,
+}: {
+  shares: number
+  web3On: boolean
+  connected: boolean
+  onConnect: () => void
+}) {
   const [amount, setAmount] = useState('')
   const { mutate, isPending, error, reset } = useRemoveLiquidity()
 
-  const disabled = isPending || Number(amount) <= 0
+  const over = num(amount) > shares
+  const cta = web3On && !connected
+    ? { label: 'Connect wallet', disabled: false }
+    : num(amount) <= 0
+      ? { label: 'Enter an amount', disabled: true }
+      : over
+        ? { label: 'Insufficient FANS-LP', disabled: true }
+        : isPending
+          ? { label: 'Removing…', disabled: true }
+          : { label: 'Remove liquidity', disabled: false }
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-3 pt-4">
-        <Field
-          label="LP shares to remove"
-          available={shares}
+      <CardContent className="flex flex-col gap-1.5 pt-4">
+        <TokenField
+          label="Withdraw"
+          token={TOKENS.lp}
+          available={connected || !web3On ? shares : undefined}
           value={amount}
-          onChange={(v) => {
-            reset()
-            setAmount(v)
-          }}
+          editable
+          onChange={(v) => { reset(); setAmount(v) }}
+          onMax={() => setAmount(String(shares))}
         />
+        <p className="mt-1 px-1 text-xs text-[var(--color-muted)]">
+          Burns FANS-LP for the underlying ETH + $FANS.
+        </p>
         {error ? (
-          <p className="text-xs text-[var(--color-negative)]" role="alert">
-            {lpErrorMessage(error)}
+          <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
+            {error instanceof Error ? error.message : 'Could not remove liquidity.'}
           </p>
         ) : null}
         <Button
+          className="mt-2"
           variant="secondary"
-          disabled={disabled}
-          onClick={() => mutate(amount, { onSuccess: () => setAmount('') })}
+          disabled={cta.disabled}
+          onClick={() => {
+            if (web3On && !connected) return onConnect()
+            mutate(amount, { onSuccess: () => setAmount('') })
+          }}
         >
-          {isPending ? 'Removing…' : 'Remove liquidity'}
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {cta.label}
         </Button>
       </CardContent>
     </Card>
-  )
-}
-
-function Field({
-  label,
-  available,
-  value,
-  onChange,
-}: {
-  label: string
-  available: number
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-xs text-[var(--color-muted)]">{label}</span>
-        <button
-          type="button"
-          onClick={() => onChange(String(available))}
-          className="text-xs text-[var(--color-accent)]"
-        >
-          {formatNumber(available, { compact: true })} Available
-        </button>
-      </div>
-      <Input
-        inputMode="decimal"
-        placeholder="0.0"
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ''))}
-        aria-label={label}
-      />
-    </div>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[var(--radius)] bg-[var(--color-surface-2)] p-2">
-      <div className="text-[var(--color-muted)] text-xs">{label}</div>
-      <div className="mt-0.5 font-semibold text-[var(--color-fg)]">{value}</div>
-    </div>
   )
 }

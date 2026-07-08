@@ -6,8 +6,7 @@
  */
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatNumber, formatUsd } from '@/shared/lib/format'
-import { currentFansPriceUsd } from '../api/lp.api'
+import { formatNumber } from '@/shared/lib/format'
 import { usePool } from '../hooks/use-lp'
 import { FarmPanel } from './farm-panel'
 import { LiquidityPanel } from './liquidity-panel'
@@ -26,8 +25,7 @@ export function LpScreen() {
         </p>
         {pool ? (
           <p className="text-xs text-[var(--color-muted)]">
-            1 ETH ≈ {formatNumber(Number(pool.fansPerEth), { compact: true })} $FANS ·{' '}
-            $FANS {formatUsd(currentFansPriceUsd())}
+            Pool rate · 1 ETH ≈ {formatNumber(Number(pool.fansPerEth), { compact: true })} $FANS
           </p>
         ) : null}
       </header>

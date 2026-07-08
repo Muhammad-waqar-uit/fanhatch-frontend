@@ -1,7 +1,7 @@
 /**
  * Mock state for the LP feature (served when env.useMocks is true).
  * A tiny in-memory AMM so the Swap / Liquidity / Farm flows work with no
- * backend. Constant-product with a 0.3% fee, matching the contract math.
+ * backend. Constant-product with the 1.5% hook fee, matching the v4 pool.
  */
 import type { Farm, LpPosition, Pool, SwapDirection } from './types'
 
@@ -42,10 +42,10 @@ export function fansPriceUsd(): number {
   return (mockPool.reserveEth * ETH_PRICE_USD) / mockPool.reserveFans
 }
 
-/** Constant-product output with 0.3% fee: in·997·rOut / (rIn·1000 + in·997). */
+/** Constant-product output with the 1.5% hook fee: in·985·rOut / (rIn·1000 + in·985). */
 export function amountOut(amountIn: number, reserveIn: number, reserveOut: number): number {
   if (amountIn <= 0 || reserveIn <= 0 || reserveOut <= 0) return 0
-  const inWithFee = amountIn * 997
+  const inWithFee = amountIn * 985
   return (inWithFee * reserveOut) / (reserveIn * 1000 + inWithFee)
 }
 
