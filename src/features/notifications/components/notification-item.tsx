@@ -1,19 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { formatRelative } from 'date-fns'
 import { Bell } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/shared/lib/cn'
+import { formatRelativeTime } from '@/shared/lib/datetime'
 import { NOTIFICATION_CONFIG } from '../config'
 import { useMarkRead } from '../hooks'
 import type { Notification } from '../types'
-
-/** Capitalise the first letter of date-fns' relative string ("today at 3pm"). */
-function relativeTime(iso: string): string {
-  const s = formatRelative(new Date(iso), new Date())
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
 
 /**
  * One notification row. Fully config-driven (icon / accent / title / body /
@@ -73,7 +67,7 @@ export function NotificationItem({
       <div className="min-w-0 flex-1">
         <p className={cn('text-sm text-[var(--color-fg)]', unread && 'font-semibold')}>{title}</p>
         {body && <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-muted)]">{body}</p>}
-        <p className="mt-1 text-[11px] text-[var(--color-muted)]">{relativeTime(notification.createdAt)}</p>
+        <p className="mt-1 text-[11px] text-[var(--color-muted)]">{formatRelativeTime(notification.createdAt)}</p>
       </div>
 
       {unread && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[var(--color-accent)]" />}
