@@ -1,58 +1,53 @@
 'use client'
 
 /**
- * LP screen: Swap · Liquidity · Farm. Header shows the live pool ratio and
- * derived $FANS price so the user has pool context across every tab.
+ * LP screen — "Claims & Liquidity". Two columns: the "Your LP" rewards/claim card on
+ * the left, and a Swap · LP tabbed card on the right. The LP tab stacks the provide-
+ * liquidity form and the FANS-LP staking (Farm) controls.
  */
 import { useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatNumber } from '@/shared/lib/format'
-import { usePool } from '../hooks/use-lp'
 import { FarmPanel } from './farm-panel'
 import { LiquidityPanel } from './liquidity-panel'
+import { RewardsCard } from './rewards-card'
 import { SwapPanel } from './swap-panel'
 
 export function LpScreen() {
   const [tab, setTab] = useState('swap')
-  const { data: pool } = usePool()
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-[var(--color-fg)]">Your LP</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-fg)] sm:text-3xl">Claims &amp; Liquidity</h1>
         <p className="text-sm text-[var(--color-muted)]">
-          Provide ETH &amp; $FANS liquidity, earn a share of swap fees, and claim rewards in $FANS.
+          Claim your rewards and manage liquidity pools
         </p>
-        {pool ? (
-          <p className="text-xs text-[var(--color-muted)]">
-            Pool rate · 1 ETH ≈ {formatNumber(Number(pool.fansPerEth), { compact: true })} $FANS
-          </p>
-        ) : null}
       </header>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full">
-          <TabsTrigger value="swap" className="flex-1">
-            Swap
-          </TabsTrigger>
-          <TabsTrigger value="liquidity" className="flex-1">
-            Liquidity
-          </TabsTrigger>
-          <TabsTrigger value="farm" className="flex-1">
-            Farm
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid items-start gap-4 md:grid-cols-2">
+        <RewardsCard />
 
-        <TabsContent value="swap" className="mt-4">
-          <SwapPanel />
-        </TabsContent>
-        <TabsContent value="liquidity" className="mt-4">
-          <LiquidityPanel />
-        </TabsContent>
-        <TabsContent value="farm" className="mt-4">
-          <FarmPanel />
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardContent className="pt-5">
+            <Tabs value={tab} onValueChange={setTab}>
+              <TabsList className="w-full">
+                <TabsTrigger value="swap">Swap</TabsTrigger>
+                <TabsTrigger value="lp">LP</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="swap" className="mt-4">
+                <SwapPanel />
+              </TabsContent>
+              <TabsContent value="lp" className="mt-4 flex flex-col gap-4">
+                <LiquidityPanel />
+                <div className="border-t border-[var(--color-border)]" />
+                <FarmPanel />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

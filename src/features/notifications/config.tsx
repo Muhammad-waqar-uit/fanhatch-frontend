@@ -1,5 +1,4 @@
 import {
-  AtSign,
   Coins,
   Crown,
   Gift,
@@ -28,7 +27,17 @@ export interface NotificationConfig {
   title: (data: NotificationData) => string
   body: (data: NotificationData) => string | undefined
   href: (data: NotificationData) => string
+  /**
+   * Short, actor-less action phrase for the figma row layout
+   * (e.g. "Started following you"). Falls back to `body` when absent.
+   */
+  action?: (data: NotificationData) => string | undefined
+  /** Optional inline chip label rendered under the action (e.g. a "$25" tip). */
+  chip?: (data: NotificationData) => string | undefined
 }
+
+/** `$25`-style money chip when a dollar amount is present. */
+const priceChip = (d: NotificationData) => (d.price != null ? `$${d.price}` : undefined)
 
 const actor = (d: NotificationData) => d.actorName ?? 'Someone'
 const userHandle = (d: NotificationData) => d.actorHandle ?? d.creatorHandle
@@ -57,6 +66,8 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${actor(d)} bought your key`,
     body: keyLine,
     href: userHref,
+    action: () => 'Bought your key',
+    chip: priceChip,
   },
   KEY_SOLD: {
     icon: Key,
@@ -64,6 +75,8 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${actor(d)} sold their key`,
     body: keyLine,
     href: userHref,
+    action: () => 'Sold their key',
+    chip: priceChip,
   },
   GIFT_RECEIVED: {
     icon: Gift,
@@ -74,6 +87,8 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
         ? `${d.amount} ${d.clubName ?? 'club'} key${d.amount > 1 ? 's' : ''}`
         : undefined,
     href: (d) => (d.roomId ? chatHref(d) : '/wallet'),
+    action: () => 'Sent you a tip',
+    chip: priceChip,
   },
   CLUB_CREATED: {
     icon: Users,
@@ -81,6 +96,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${d.clubName ?? 'A new club'} was created`,
     body: (d) => (d.actorName ? `by ${d.actorName}` : undefined),
     href: userHref,
+    action: (d) => `Created ${d.clubName ?? 'a new club'}`,
   },
   VOTE_RECEIVED: {
     icon: Vote,
@@ -102,6 +118,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${actor(d)} followed you`,
     body: () => undefined,
     href: userHref,
+    action: () => 'Started following you',
   },
   POST_PUBLISHED: {
     icon: Newspaper,
@@ -109,6 +126,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${actor(d)} published a new post`,
     body: (d) => d.excerpt,
     href: postHref,
+    action: () => 'Published a new post',
   },
   POST_LIKED: {
     icon: Heart,
@@ -116,13 +134,15 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `${actor(d)} liked your post`,
     body: (d) => d.excerpt,
     href: postHref,
+    action: () => 'Liked your post',
   },
   MENTIONED: {
-    icon: AtSign,
+    icon: MessageCircle,
     accent: 'text-[var(--color-accent)]',
     title: (d) => `${actor(d)} mentioned you`,
     body: (d) => d.excerpt,
     href: chatHref,
+    action: () => 'Commented on your post',
   },
   NEW_MESSAGE: {
     icon: MessageCircle,
@@ -130,6 +150,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     title: (d) => `New message from ${actor(d)}`,
     body: (d) => d.excerpt,
     href: chatHref,
+    action: () => 'Sent you a message',
   },
   SWAP_EXECUTED: {
     icon: Repeat,

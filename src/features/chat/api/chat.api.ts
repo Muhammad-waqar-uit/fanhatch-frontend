@@ -36,6 +36,7 @@ export function mapRoom(dto: ChatRoomDto): ChatRoom {
     name: dto.name,
     avatarUrl: dto.avatarUrl,
     lastMessage: dto.lastMessage?.body,
+    lastMessageAt: dto.lastMessage?.sentAt,
     unread: dto.unread,
     // Club rooms are key-gated (clubId is the future gating key); DMs are not.
     gated: dto.type === 'club',

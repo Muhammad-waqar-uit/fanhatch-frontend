@@ -2,8 +2,6 @@
 
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/shared/lib/cn'
-import { timeAgo } from '@/shared/lib/format'
 import type { ChatMessage } from '../types'
 
 function initials(name: string): string {
@@ -16,16 +14,22 @@ function initials(name: string): string {
     .toUpperCase()
 }
 
+/** "2:00 PM" style clock time from an ISO timestamp. */
+function clockTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
 export function MessageItem({ message }: { message: ChatMessage }) {
   if (message.mine) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[75%]">
-          <div className="rounded-[var(--radius)] bg-[var(--color-accent)] px-3 py-2 text-sm text-[var(--color-accent-fg)] break-words [overflow-wrap:anywhere]">
-            {message.body}
-          </div>
-          <p className="mt-1 text-right text-[10px] text-[var(--color-muted)]">
-            {timeAgo(message.sentAt)}
+        <div className="max-w-[75%] rounded-2xl rounded-br-md bg-[var(--color-accent)] px-4 py-2.5 text-sm text-[var(--color-accent-fg)]">
+          <p className="break-words [overflow-wrap:anywhere]">{message.body}</p>
+          <p className="mt-1 text-right text-[10px] text-[var(--color-accent-fg)]/70">
+            {clockTime(message.sentAt)}
           </p>
         </div>
       </div>
@@ -51,7 +55,7 @@ export function MessageItem({ message }: { message: ChatMessage }) {
         avatar
       )}
       <div className="max-w-[75%]">
-        <div className="mb-1 flex items-center gap-2">
+        <div className="mb-1">
           {profileHref ? (
             <Link
               href={profileHref}
@@ -62,14 +66,12 @@ export function MessageItem({ message }: { message: ChatMessage }) {
           ) : (
             <span className="text-xs font-medium text-[var(--color-fg)]">{message.senderName}</span>
           )}
-          <span className="text-[10px] text-[var(--color-muted)]">{timeAgo(message.sentAt)}</span>
         </div>
-        <div
-          className={cn(
-            'rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-[var(--color-fg)] break-words [overflow-wrap:anywhere]',
-          )}
-        >
-          {message.body}
+        <div className="rounded-2xl rounded-tl-md bg-[var(--color-surface-2)] px-4 py-2.5 text-sm text-[var(--color-fg)]">
+          <p className="break-words [overflow-wrap:anywhere]">{message.body}</p>
+          <p className="mt-1 text-right text-[10px] text-[var(--color-muted)]">
+            {clockTime(message.sentAt)}
+          </p>
         </div>
       </div>
     </div>

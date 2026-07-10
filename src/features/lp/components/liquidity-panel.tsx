@@ -7,9 +7,8 @@
  */
 import { useMemo, useState } from 'react'
 import { useModal } from 'connectkit'
-import { Loader2 } from 'lucide-react'
+import { Info, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   useEthBalance,
   useFansBalance,
@@ -20,7 +19,7 @@ import {
 import { formatNumber } from '@/shared/lib/format'
 import { mockWalletBalances } from '../api/lp.api'
 import { useAddLiquidity, usePosition, useRemoveLiquidity } from '../hooks/use-lp'
-import { DetailRow, Segmented, StatTile, TOKENS, TokenField, num } from './token-ui'
+import { Segmented, StatTile, TOKENS, TokenField, num } from './token-ui'
 
 export function LiquidityPanel() {
   const [mode, setMode] = useState<'add' | 'remove'>('add')
@@ -61,26 +60,24 @@ export function LiquidityPanel() {
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-sm text-[var(--color-muted)]">
+        Provide liquidity to the ETH/$FANS pool to earn rewards.
+      </p>
+
       {/* Position */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-fg)]">Your position</h2>
-            {pos.sharePct > 0 ? (
-              <span className="text-xs text-[var(--color-muted)]">{pos.sharePct.toFixed(2)}% of pool</span>
-            ) : null}
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <StatTile label="FANS-LP" value={formatNumber(pos.shares, { compact: true })} />
-            <StatTile label="Pooled ETH" value={formatNumber(pos.eth, { compact: false })} />
-            <StatTile label="Pooled $FANS" value={formatNumber(pos.fans, { compact: true })} />
-          </div>
-          <p className="mt-3 text-xs text-[var(--color-muted)]">
-            Stake your FANS-LP in the <span className="text-[var(--color-fg)]">Farm</span> tab to earn a
-            share of the 1.5% trade fee, paid in $FANS.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[var(--color-fg)]">Your position</h3>
+          {pos.sharePct > 0 ? (
+            <span className="text-xs text-[var(--color-muted)]">{pos.sharePct.toFixed(2)}% of pool</span>
+          ) : null}
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <StatTile label="FANS-LP" value={formatNumber(pos.shares, { compact: true })} />
+          <StatTile label="Pooled ETH" value={formatNumber(pos.eth, { compact: false })} />
+          <StatTile label="Pooled $FANS" value={formatNumber(pos.fans, { compact: true })} />
+        </div>
+      </div>
 
       <Segmented options={['add', 'remove'] as const} value={mode} onChange={setMode} />
 
@@ -131,50 +128,53 @@ function AddForm({
           : { label: 'Add liquidity', disabled: false }
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-1.5 pt-4">
-        <TokenField
-          label="Deposit"
-          token={TOKENS.eth}
-          available={balances?.eth}
-          value={ethIn}
-          editable
-          onChange={(v) => { reset(); setEthIn(v) }}
-          onMax={balances ? () => setEthIn(String(balances.eth)) : undefined}
-        />
-        <TokenField
-          label="Deposit"
-          token={TOKENS.fans}
-          available={balances?.fans}
-          value={fansIn}
-          editable
-          onChange={(v) => { reset(); setFansIn(v) }}
-          onMax={balances ? () => setFansIn(String(balances.fans)) : undefined}
-        />
-        <dl className="mt-1 rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2.5 text-xs">
-          <DetailRow term="You receive">FANS-LP (pool share)</DetailRow>
-          <p className="mt-1 text-[var(--color-muted)]">
-            Added at the current pool ratio — any excess of either token is refunded.
-          </p>
-        </dl>
-        {error ? (
-          <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
-            {error instanceof Error ? error.message : 'Could not add liquidity.'}
-          </p>
-        ) : null}
-        <Button
-          className="mt-2"
-          disabled={cta.disabled}
-          onClick={() => {
-            if (web3On && !connected) return onConnect()
-            mutate({ ethIn, fansIn }, { onSuccess: () => { setEthIn(''); setFansIn('') } })
-          }}
-        >
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          {cta.label}
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-1.5">
+      <TokenField
+        label="Deposit ETH"
+        token={TOKENS.eth}
+        available={balances?.eth}
+        value={ethIn}
+        editable
+        onChange={(v) => { reset(); setEthIn(v) }}
+        onMax={balances ? () => setEthIn(String(balances.eth)) : undefined}
+      />
+      <div className="py-0.5 text-center text-xs text-[var(--color-muted)]">&amp;</div>
+      <TokenField
+        label="Deposit $FANS"
+        token={TOKENS.fans}
+        available={balances?.fans}
+        value={fansIn}
+        editable
+        onChange={(v) => { reset(); setFansIn(v) }}
+        onMax={balances ? () => setFansIn(String(balances.fans)) : undefined}
+      />
+      <div className="mt-1 rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2.5">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-fg)]">
+          <Info className="size-3.5 text-[var(--color-muted)]" />
+          LP Fees
+        </div>
+        <p className="mt-1 text-[11px] leading-relaxed text-[var(--color-muted)]">
+          Fans.tech takes 1.5% of all $FANS/ETH swaps (collected to your LP automatically) and 1.5% of
+          all Club key swaps. Added at the current pool ratio — any excess is refunded.
+        </p>
+      </div>
+      {error ? (
+        <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
+          {error instanceof Error ? error.message : 'Could not add liquidity.'}
+        </p>
+      ) : null}
+      <Button
+        className="mt-2"
+        disabled={cta.disabled}
+        onClick={() => {
+          if (web3On && !connected) return onConnect()
+          mutate({ ethIn, fansIn }, { onSuccess: () => { setEthIn(''); setFansIn('') } })
+        }}
+      >
+        {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+        {cta.label}
+      </Button>
+    </div>
   )
 }
 
@@ -204,38 +204,36 @@ function RemoveForm({
           : { label: 'Remove liquidity', disabled: false }
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-1.5 pt-4">
-        <TokenField
-          label="Withdraw"
-          token={TOKENS.lp}
-          available={connected || !web3On ? shares : undefined}
-          value={amount}
-          editable
-          onChange={(v) => { reset(); setAmount(v) }}
-          onMax={() => setAmount(String(shares))}
-        />
-        <p className="mt-1 px-1 text-xs text-[var(--color-muted)]">
-          Burns FANS-LP for the underlying ETH + $FANS.
+    <div className="flex flex-col gap-1.5">
+      <TokenField
+        label="Withdraw"
+        token={TOKENS.lp}
+        available={connected || !web3On ? shares : undefined}
+        value={amount}
+        editable
+        onChange={(v) => { reset(); setAmount(v) }}
+        onMax={() => setAmount(String(shares))}
+      />
+      <p className="mt-1 px-1 text-xs text-[var(--color-muted)]">
+        Burns FANS-LP for the underlying ETH + $FANS.
+      </p>
+      {error ? (
+        <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
+          {error instanceof Error ? error.message : 'Could not remove liquidity.'}
         </p>
-        {error ? (
-          <p className="mt-1 text-xs text-[var(--color-negative)]" role="alert">
-            {error instanceof Error ? error.message : 'Could not remove liquidity.'}
-          </p>
-        ) : null}
-        <Button
-          className="mt-2"
-          variant="secondary"
-          disabled={cta.disabled}
-          onClick={() => {
-            if (web3On && !connected) return onConnect()
-            mutate(amount, { onSuccess: () => setAmount('') })
-          }}
-        >
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          {cta.label}
-        </Button>
-      </CardContent>
-    </Card>
+      ) : null}
+      <Button
+        className="mt-2"
+        variant="secondary"
+        disabled={cta.disabled}
+        onClick={() => {
+          if (web3On && !connected) return onConnect()
+          mutate(amount, { onSuccess: () => setAmount('') })
+        }}
+      >
+        {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+        {cta.label}
+      </Button>
+    </div>
   )
 }

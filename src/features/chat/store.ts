@@ -5,7 +5,7 @@ interface ChatState {
   activeRoomId: string | null
   /** Messages grouped by room id. */
   messagesByRoom: Record<string, ChatMessage[]>
-  selectRoom: (roomId: string) => void
+  selectRoom: (roomId: string | null) => void
   /** Replace the message list for a room (e.g. after a fetch). */
   setMessages: (roomId: string, messages: ChatMessage[]) => void
   /** Append a single message, de-duplicating by id. */

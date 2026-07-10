@@ -11,6 +11,8 @@ export interface ChatRoom {
   avatarUrl?: string
   /** Latest message preview shown in the room list. */
   lastMessage?: string
+  /** ISO timestamp of the latest message, shown as a relative time in the list. */
+  lastMessageAt?: string
   /** Current club key price in USD (shown for club rooms without a preview). */
   keyPrice?: number
   /** Unread message count. */

@@ -1,14 +1,5 @@
 'use client'
 
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Coins,
-  KeyRound,
-  MessageCircle,
-  ShoppingCart,
-  Tag,
-} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   useEthBalance,
@@ -18,11 +9,9 @@ import {
 } from '@/features/web3'
 import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { useWalletKeys, useWalletOverview, useWalletRewards } from '../hooks/use-wallet'
-import type { WalletToken } from '../types'
-import { AssetCard } from './asset-card'
+import { AssetCard, ChangeSub, EthDiamond, TealDot, TokenValue } from './asset-card'
 import { NetWorthHeader } from './net-worth-header'
 import { RewardsCards } from './rewards-cards'
-import { TokenList } from './token-list'
 import { WalletAddressCard } from './wallet-address-card'
 
 /**
@@ -49,30 +38,16 @@ export function WalletScreen() {
   const liveEth = onchain ? ethQuery.data : undefined
   const liveFans = onchain ? fansQuery.data : undefined
 
-  // Lean token balances list (ETH + $FANS) — live on-chain balance when connected,
-  // else the web2 sim balances. No fiat pricing.
-  const tokens: WalletToken[] = [
-    {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      balance: Number(liveEth?.formatted ?? overview?.balances.eth ?? 0),
-    },
-    {
-      symbol: '$FANS',
-      name: 'Fans Token',
-      balance: Number(liveFans?.formatted ?? overview?.balances.fans ?? 0),
-    },
-  ]
-
   // Swap lives on the LP page; these are navigation stubs for now.
   const goToLp = () => router.push('/lp')
   const goToChat = () => router.push('/chat')
 
+  const ethBalance = Number(liveEth?.formatted ?? overview?.balances.eth ?? 0)
+  const fansBalance = Number(liveFans?.formatted ?? overview?.balances.fans ?? 0)
+
   return (
     <div className="h-full overflow-y-auto scrollbar-thin">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-6">
-        <h1 className="text-lg font-semibold text-[var(--color-fg)]">Wallet</h1>
-
         <WalletAddressCard />
 
         {overviewQuery.isLoading ? (
@@ -85,47 +60,51 @@ export function WalletScreen() {
           <>
             <NetWorthHeader overview={overview} />
 
-            <TokenList tokens={tokens} />
-
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <AssetCard
-                icon={Coins}
+                icon="💎"
                 title="Ethereum"
                 subtitle="ETH"
-                value={`${formatNumber(Number(liveEth?.formatted ?? overview.balances.eth))} ETH`}
-                secondary={
-                  liveEth ? 'Live on-chain balance' : formatUsd(Number(overview.balances.ethUsd))
-                }
-                actions={[
-                  { label: 'Send', onClick: goToLp, icon: ArrowUpRight },
-                  { label: 'Receive', onClick: goToLp, variant: 'outline', icon: ArrowDownLeft },
-                ]}
-              />
+                buttonLabel="Send/Receive"
+                onButtonClick={goToLp}
+              >
+                <TokenValue glyph={<EthDiamond />}>{formatNumber(ethBalance)}</TokenValue>
+                <ChangeSub
+                  pct={liveEth ? undefined : overview.balances.ethChangePct}
+                  secondary={
+                    liveEth ? 'Live on-chain balance' : formatUsd(Number(overview.balances.ethUsd))
+                  }
+                />
+              </AssetCard>
 
               <AssetCard
-                icon={Coins}
+                icon="🪙"
                 title="$FANS"
                 subtitle="Platform Token"
-                value={`${formatNumber(Number(liveFans?.formatted ?? overview.balances.fans))} $FANS`}
-                secondary={
-                  liveFans ? 'Live on-chain balance' : formatUsd(Number(overview.balances.fansUsd))
-                }
-                actions={[
-                  { label: 'Buy', onClick: goToLp, variant: 'primary', icon: ShoppingCart },
-                  { label: 'Sell', onClick: goToLp, variant: 'outline', icon: Tag },
-                ]}
-              />
+                buttonLabel="Buy/Sell"
+                onButtonClick={goToLp}
+              >
+                <TokenValue glyph={<TealDot />}>{formatNumber(fansBalance)}</TokenValue>
+                <ChangeSub
+                  pct={liveFans ? undefined : overview.balances.fansChangePct}
+                  secondary={
+                    liveFans
+                      ? 'Live on-chain balance'
+                      : formatUsd(Number(overview.balances.fansUsd))
+                  }
+                />
+              </AssetCard>
 
               <AssetCard
-                icon={KeyRound}
+                icon="🔑"
                 title="Keys"
                 subtitle="Creator Access"
-                value={formatUsd(Number(overview.keys.valueUsd))}
-                secondary={`${formatNumber(keyCount)} Keys`}
-                actions={[
-                  { label: 'Chat', onClick: goToChat, icon: MessageCircle },
-                ]}
-              />
+                buttonLabel="Chat"
+                onButtonClick={goToChat}
+              >
+                <TokenValue>{formatUsd(Number(overview.keys.valueUsd))}</TokenValue>
+                <ChangeSub secondary={`${formatNumber(keyCount)} Keys`} />
+              </AssetCard>
             </div>
 
             {rewardsQuery.data ? <RewardsCards rewards={rewardsQuery.data} /> : null}

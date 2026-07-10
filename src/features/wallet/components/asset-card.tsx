@@ -1,66 +1,91 @@
 'use client'
 
-import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-export interface AssetCardAction {
-  label: string
-  onClick: () => void
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
-  icon?: LucideIcon
+/** Teal $FANS / rewards token dot used inside value boxes. */
+export function TealDot() {
+  return <span className="inline-block size-2.5 shrink-0 rounded-full bg-[#2dd4bf]" />
+}
+
+/** Small diamond glyph for ETH amounts inside value boxes. */
+export function EthDiamond() {
+  return <span className="inline-block size-2.5 shrink-0 rotate-45 bg-[var(--color-fg)]" />
+}
+
+/** Centered value inside a card's value box — optional leading glyph + value. */
+export function TokenValue({ glyph, children }: { glyph?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-center gap-2 text-lg font-semibold text-[var(--color-fg)]">
+      {glyph}
+      <span>{children}</span>
+    </div>
+  )
+}
+
+/** Sub-line under a value: colored ↑/↓ pct + a muted amount. */
+export function ChangeSub({ pct, secondary }: { pct?: number; secondary: string }) {
+  const up = (pct ?? 0) >= 0
+  const tone = up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+  return (
+    <div className="mt-1 flex items-center justify-center gap-1.5 text-xs">
+      {pct !== undefined ? (
+        <span className={tone}>
+          {up ? '↑' : '↓'}
+          {Math.abs(pct)}%
+        </span>
+      ) : null}
+      <span className="text-[var(--color-muted)]">{secondary}</span>
+    </div>
+  )
 }
 
 /**
- * Reusable wallet asset tile — used for Ethereum (ETH), $FANS (Platform Token),
- * and Keys (Creator Access). Shows an icon + title/subtitle header, a primary
- * value with an optional secondary line, and a row of action buttons.
+ * Reusable wallet asset tile (figma wallet grid) — a centered emoji/icon, a
+ * title + subtitle, a value box (children), and one full-width action button.
+ * Used for Ethereum, $FANS, Keys and the reward tiles.
  */
 export function AssetCard({
-  icon: Icon,
+  icon,
   title,
   subtitle,
-  value,
-  secondary,
-  actions,
+  children,
+  buttonLabel,
+  onButtonClick,
+  buttonDisabled,
 }: {
-  icon: LucideIcon
+  icon: ReactNode
   title: string
   subtitle: string
-  value: string
-  secondary?: string
-  actions: AssetCardAction[]
+  children: ReactNode
+  buttonLabel: string
+  onButtonClick: () => void
+  buttonDisabled?: boolean
 }) {
   return (
-    <Card className="flex flex-col gap-4 p-4">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-full bg-[var(--color-surface-2)] text-[var(--color-fg)]">
-          <Icon className="size-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--color-fg)]">{title}</p>
-          <p className="truncate text-xs text-[var(--color-muted)]">{subtitle}</p>
-        </div>
+    <Card className="flex flex-col items-center gap-3 p-4 text-center">
+      <div className="text-3xl leading-none" aria-hidden>
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-[var(--color-fg)]">{title}</p>
+        <p className="truncate text-xs text-[var(--color-muted)]">{subtitle}</p>
       </div>
 
-      <div>
-        <p className="text-xl font-semibold text-[var(--color-fg)]">{value}</p>
-        {secondary ? <p className="text-xs text-[var(--color-muted)]">{secondary}</p> : null}
+      <div className="w-full rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-3">
+        {children}
       </div>
 
-      <div className="mt-auto flex flex-wrap gap-2">
-        {actions.map((action) => (
-          <Button
-            key={action.label}
-            variant={action.variant ?? 'secondary'}
-            size="sm"
-            onClick={action.onClick}
-          >
-            {action.icon ? <action.icon /> : null}
-            {action.label}
-          </Button>
-        ))}
-      </div>
+      <Button
+        className="mt-auto w-full"
+        variant="primary"
+        size="sm"
+        onClick={onButtonClick}
+        disabled={buttonDisabled}
+      >
+        {buttonLabel}
+      </Button>
     </Card>
   )
 }

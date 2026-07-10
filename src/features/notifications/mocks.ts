@@ -43,6 +43,7 @@ export const mockNotificationSeed: Notification[] = [
       clubName: 'Fans.tech Founders',
       roomId: 'dm-alice',
       amount: 1,
+      price: 25,
     },
     createdAt: minsAgo(26),
     readAt: null,

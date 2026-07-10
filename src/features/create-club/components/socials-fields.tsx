@@ -15,12 +15,12 @@ export function SocialsFields({
     onChange({ ...value, [key]: e.target.value })
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold text-[var(--color-fg)]">
-        Optional: social accounts to display for token
+        Optional: Social accounts to display for tokens
       </h3>
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--color-muted)]">X account</span>
+        <span className="text-xs text-[var(--color-muted)]">X account to display for tokens</span>
         <Input
           value={value.x ?? ''}
           onChange={set('x')}
@@ -29,22 +29,22 @@ export function SocialsFields({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--color-muted)]">Email</span>
+        <span className="text-xs text-[var(--color-muted)]">Email account to display for token</span>
         <Input
           type="email"
           value={value.email ?? ''}
           onChange={set('email')}
-          placeholder="you@example.com"
+          placeholder="@username"
           autoComplete="off"
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--color-muted)]">Website</span>
+        <span className="text-xs text-[var(--color-muted)]">Website to display for token</span>
         <Input
           type="url"
           value={value.website ?? ''}
           onChange={set('website')}
-          placeholder="https://…"
+          placeholder="https://example.com"
           autoComplete="off"
         />
       </label>

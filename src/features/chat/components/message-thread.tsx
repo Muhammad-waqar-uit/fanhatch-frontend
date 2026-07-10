@@ -1,11 +1,10 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Lock, Users } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { env } from '@/config/env'
@@ -16,7 +15,7 @@ import {
   useWeb3Context,
   web3Config,
 } from '@/features/web3'
-import { formatNumber } from '@/shared/lib/format'
+import { formatNumber, formatUsd } from '@/shared/lib/format'
 import { getMessages, getRooms } from '../api/chat.api'
 import { toClubIdBig, txErrorMessage } from '../lib/onchain'
 import {
@@ -45,6 +44,7 @@ function initials(name: string): string {
 export function MessageThread({ roomId }: { roomId: string }) {
   const setMessages = useChatStore((s) => s.setMessages)
   const appendMessage = useChatStore((s) => s.appendMessage)
+  const selectRoom = useChatStore((s) => s.selectRoom)
   const messages = useChatStore((s) => s.messagesByRoom[roomId])
   const bottomRef = useRef<HTMLDivElement>(null)
   const [accessRevoked, setAccessRevoked] = useState(false)
@@ -121,8 +121,16 @@ export function MessageThread({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-4">
-        <Avatar>
+      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-4">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={() => selectRoom(null)}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-fg)]"
+        >
+          <ArrowLeft className="size-5" />
+        </button>
+        <Avatar className="size-10">
           <AvatarImage src={room?.avatarUrl} alt={room?.name ?? ''} />
           <AvatarFallback>{room ? initials(room.name) : '?'}</AvatarFallback>
         </Avatar>
@@ -131,13 +139,16 @@ export function MessageThread({ roomId }: { roomId: string }) {
             {room?.name ?? 'Chat'}
           </p>
           {room?.memberCount != null ? (
-            <p className="flex items-center gap-1 text-xs text-[var(--color-muted)]">
-              <Users className="size-3" />
-              {formatNumber(room.memberCount)} members
+            <p className="text-xs text-[var(--color-muted)]">
+              {formatNumber(room.memberCount)} Members
             </p>
           ) : null}
         </div>
-        {room?.gated ? <Badge tone="accent">key-gated</Badge> : null}
+        {room?.keyPrice != null ? (
+          <span className="rounded-full bg-[var(--color-surface-2)] px-3 py-1 text-xs font-medium text-[var(--color-fg)]">
+            {formatUsd(room.keyPrice)}
+          </span>
+        ) : null}
         {room ? <RoomActionsMenu room={room} /> : null}
       </header>
 

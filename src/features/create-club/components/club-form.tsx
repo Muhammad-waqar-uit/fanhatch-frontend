@@ -1,6 +1,6 @@
 'use client'
 
-import { ImagePlus } from 'lucide-react'
+import { UploadCloud } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,10 +74,10 @@ export function ClubForm({ submitting, error, onSubmit }: ClubFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Photo upload area (web2: paste a URL; real upload is a later swap). */}
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col gap-2">
         <label
           className={cn(
-            'flex size-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-full border border-dashed border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-muted)] transition-colors hover:border-[var(--color-muted)]',
+            'flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] transition-colors hover:border-[var(--color-muted)]',
           )}
           style={
             avatarUrl
@@ -87,8 +87,8 @@ export function ClubForm({ submitting, error, onSubmit }: ClubFormProps) {
         >
           {!avatarUrl && (
             <>
-              <ImagePlus className="size-5" />
-              <span className="text-[10px]">Tap to add photo</span>
+              <UploadCloud className="size-6 text-[var(--color-accent)]" />
+              <span className="text-xs">Tap to add photo</span>
             </>
           )}
           <input
@@ -99,51 +99,51 @@ export function ClubForm({ submitting, error, onSubmit }: ClubFormProps) {
             className="sr-only"
           />
         </label>
+        {/* Web2 photo entry: paste an image URL (real file upload is a later swap). */}
         <Input
           value={avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="Photo URL (optional)"
-          className="max-w-xs"
+          placeholder="Image URL (optional)"
         />
       </div>
 
       <div className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--color-muted)]">Name</span>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Club name"
-            aria-invalid={!!showError(nameError)}
-          />
-          {showError(nameError) && (
-            <span className="text-xs text-[var(--color-negative)]">{nameError}</span>
-          )}
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Name"
+              aria-label="Name"
+              aria-invalid={!!showError(nameError)}
+            />
+            {showError(nameError) && (
+              <span className="text-xs text-[var(--color-negative)]">{nameError}</span>
+            )}
+          </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--color-muted)]">$TICKER</span>
-          <Input
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-            placeholder="$TICKER"
-            aria-invalid={!!showError(tickerError)}
-          />
-          {showError(tickerError) && (
-            <span className="text-xs text-[var(--color-negative)]">{tickerError}</span>
-          )}
-        </label>
+          <div className="flex flex-col gap-1">
+            <Input
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value)}
+              placeholder="$TICKER"
+              aria-label="Ticker"
+              aria-invalid={!!showError(tickerError)}
+            />
+            {showError(tickerError) && (
+              <span className="text-xs text-[var(--color-negative)]">{tickerError}</span>
+            )}
+          </div>
+        </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--color-muted)]">Club Description (optional)</span>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What is your club about?"
-            rows={3}
-            className="w-full resize-none rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-fg)] outline-none placeholder:text-[var(--color-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-          />
-        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Club Description (optional)"
+          aria-label="Club Description"
+          rows={4}
+          className="w-full resize-none rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-fg)] outline-none placeholder:text-[var(--color-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        />
       </div>
 
       <CurvePicker value={curveType} onChange={setCurveType} />
@@ -152,28 +152,32 @@ export function ClubForm({ submitting, error, onSubmit }: ClubFormProps) {
       )}
 
       {/* Buy club keys */}
-      <div className="flex flex-col gap-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <h3 className="text-sm font-semibold text-[var(--color-fg)]">Buy club keys</h3>
-        <p className="text-xs text-[var(--color-muted)]">
-          Be the first holder of your club key. The first key is free.
-        </p>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--color-muted)]">Quantity</span>
-          <Input
-            type="number"
-            min={1}
-            value={firstKeyQty}
-            onChange={(e) => setFirstKeyQty(Math.max(1, Number(e.target.value) || 1))}
-            className="max-w-[120px]"
-          />
-        </label>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-[var(--color-muted)]">Your Balance</span>
-          <span className="text-[var(--color-fg)]">— $FANS</span>
+      <div className="flex flex-col gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-[var(--color-fg)]">Buy club keys</h3>
+          <p className="text-xs text-[var(--color-muted)]">
+            Be the first holder of your club key. The first key is free.
+          </p>
         </div>
+        <Input
+          type="number"
+          min={1}
+          value={firstKeyQty}
+          onChange={(e) => setFirstKeyQty(Math.max(1, Number(e.target.value) || 1))}
+          placeholder="Quantity"
+          aria-label="Quantity"
+        />
         <div className="flex items-center justify-between text-xs">
-          <span className="text-[var(--color-muted)]">You&apos;ll spend</span>
-          <span className="font-medium text-[var(--color-fg)]">{spend.toFixed(3)} $FANS</span>
+          <span className="flex items-center gap-1 text-[var(--color-muted)]">
+            Your Balance:
+            <span className="size-2 rounded-full bg-[var(--color-positive)]" aria-hidden />
+            <span className="text-[var(--color-fg)]">0</span>
+          </span>
+          <span className="flex items-center gap-1 text-[var(--color-muted)]">
+            You&apos;ll spend:
+            <span className="size-2 rounded-full bg-[var(--color-positive)]" aria-hidden />
+            <span className="font-medium text-[var(--color-fg)]">{spend.toFixed(3)}</span>
+          </span>
         </div>
       </div>
 

@@ -10,18 +10,20 @@ export const mockOverview: WalletOverviewDto = {
   change24hPct: -13,
   fansPriceUsd: '0.03',
   balances: {
-    eth: '0.0342',
-    ethUsd: '102.60',
-    fans: '640.0000',
-    fansUsd: '19.20',
+    eth: '0.005',
+    ethUsd: '15.50',
+    ethChangePct: 2.9,
+    fans: '173.01',
+    fansUsd: '5.90',
+    fansChangePct: -4.7,
   },
   keys: {
-    count: 3,
-    valueUsd: '4.06',
+    count: 12,
+    valueUsd: '105.11',
   },
   rewards: {
-    farm: '12.4500',
-    club: '3.2000',
+    farm: '0',
+    club: '14.00065',
   },
 }
 
@@ -49,8 +51,10 @@ export const mockKeys: KeyHoldingDto[] = [
 
 /** Claimable reward pools + staked value for the "Your Farm" card. */
 export const mockRewards: WalletRewardsDto = {
-  farmRewards: '12.4500',
-  clubRewards: '3.2000',
-  claimable: '15.6500',
-  stakedUsd: '48.20',
+  farmRewards: '0',
+  clubRewards: '14.00065',
+  claimable: '14.00065',
+  stakedUsd: '0',
+  stakedFans: '0',
+  stakedEth: '0',
 }

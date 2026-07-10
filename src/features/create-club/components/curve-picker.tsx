@@ -43,40 +43,26 @@ function CurveCard({
   onSelect: (type: CurveType) => void
 }) {
   const width = 120
-  const height = 56
-  const est = estimatePrice(preset.type, ESTIMATE_AT)
+  const height = 72
 
   return (
     <button
       type="button"
       onClick={() => onSelect(preset.type)}
       aria-pressed={selected}
-      className="text-left focus-visible:outline-none"
+      className="focus-visible:outline-none"
     >
       <Card
         className={cn(
-          'flex h-full flex-col gap-3 p-4 transition-colors',
+          'flex h-full flex-col items-center gap-3 p-4 transition-colors',
           selected
             ? 'border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
             : 'hover:border-[var(--color-muted)]',
         )}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[var(--color-fg)]">{preset.label}</span>
-          <span
-            className={cn(
-              'size-3 rounded-full border',
-              selected
-                ? 'border-[var(--color-accent)] bg-[var(--color-accent)]'
-                : 'border-[var(--color-border)]',
-            )}
-            aria-hidden
-          />
-        </div>
-
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="h-14 w-full rounded-md bg-[var(--color-surface-2)]"
+          className="h-20 w-full"
           preserveAspectRatio="none"
           aria-hidden
         >
@@ -90,12 +76,7 @@ function CurveCard({
           />
         </svg>
 
-        <p className="text-xs text-[var(--color-muted)]">{preset.blurb}</p>
-
-        <div className="mt-auto text-xs">
-          <span className="text-[var(--color-muted)]">Est. at {ESTIMATE_AT} members</span>
-          <span className="ml-1 font-medium text-[var(--color-fg)]">{est.toFixed(3)} $FANS</span>
-        </div>
+        <span className="text-sm font-medium text-[var(--color-fg)]">{preset.label}</span>
       </Card>
     </button>
   )

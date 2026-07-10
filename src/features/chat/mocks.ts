@@ -3,6 +3,9 @@ import type { ChatMessage, ChatRoom, UserCard } from './types'
 /** Identifier used for messages authored by the signed-in user in mock mode. */
 export const MOCK_CURRENT_USER_ID = 'me'
 
+/** Relative ISO timestamp, `h` hours ago — used for room-list preview times. */
+const hoursAgoIso = (h: number): string => new Date(Date.now() - h * 3_600_000).toISOString()
+
 export const mockClubRooms: ChatRoom[] = [
   {
     id: 'club-fanstech',
@@ -10,6 +13,8 @@ export const mockClubRooms: ChatRoom[] = [
     name: 'Fans.tech Founders',
     avatarUrl: 'https://i.pravatar.cc/96?img=12',
     lastMessage: 'gm holders, key buybacks are live',
+    lastMessageAt: hoursAgoIso(2),
+    keyPrice: 0.09,
     unread: 3,
     gated: true,
     memberCount: 248,
@@ -20,6 +25,8 @@ export const mockClubRooms: ChatRoom[] = [
     type: 'club',
     name: 'Degen Traders',
     avatarUrl: 'https://i.pravatar.cc/96?img=33',
+    lastMessage: 'who is aping the new launch?',
+    lastMessageAt: hoursAgoIso(2),
     keyPrice: 0.09,
     unread: 0,
     gated: true,
@@ -32,6 +39,8 @@ export const mockClubRooms: ChatRoom[] = [
     name: 'Base Builders',
     avatarUrl: 'https://i.pravatar.cc/96?img=5',
     lastMessage: 'shipping the new vault tonight',
+    lastMessageAt: hoursAgoIso(3),
+    keyPrice: 0.09,
     unread: 12,
     gated: true,
     memberCount: 540,
@@ -42,6 +51,8 @@ export const mockClubRooms: ChatRoom[] = [
     type: 'club',
     name: 'Creator Economy',
     avatarUrl: 'https://i.pravatar.cc/96?img=49',
+    lastMessage: 'welcome new creators 👋',
+    lastMessageAt: hoursAgoIso(5),
     keyPrice: 0.42,
     gated: false,
     memberCount: 96,
@@ -56,6 +67,7 @@ export const mockUserRooms: ChatRoom[] = [
     name: 'Alice Nguyen',
     avatarUrl: 'https://i.pravatar.cc/96?img=47',
     lastMessage: 'sent you a key gift',
+    lastMessageAt: hoursAgoIso(1),
     unread: 1,
     gated: false,
   },
@@ -65,6 +77,7 @@ export const mockUserRooms: ChatRoom[] = [
     name: 'Marco Reyes',
     avatarUrl: 'https://i.pravatar.cc/96?img=15',
     lastMessage: 'lets vote for the new president',
+    lastMessageAt: hoursAgoIso(2),
     gated: false,
   },
   {
@@ -73,6 +86,7 @@ export const mockUserRooms: ChatRoom[] = [
     name: 'Sora Tanaka',
     avatarUrl: 'https://i.pravatar.cc/96?img=23',
     lastMessage: 'ty for the alpha 🙏',
+    lastMessageAt: hoursAgoIso(4),
     gated: false,
   },
 ]

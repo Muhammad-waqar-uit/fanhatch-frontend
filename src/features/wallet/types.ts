@@ -14,8 +14,12 @@ export interface WalletOverviewDto {
   balances: {
     eth: string
     ethUsd: string
+    /** 24h ETH price change as a percentage (FE display; backend may omit). */
+    ethChangePct?: number
     fans: string
     fansUsd: string
+    /** 24h $FANS price change as a percentage (FE display; backend may omit). */
+    fansChangePct?: number
   }
   keys: {
     count: number
@@ -51,6 +55,10 @@ export interface WalletRewardsDto {
   clubRewards: string
   claimable: string
   stakedUsd?: string
+  /** Staked $FANS amount for the "Your Farm" card (FE tolerated; backend may omit). */
+  stakedFans?: string
+  /** Staked ETH amount for the "Your Farm" card (FE tolerated; backend may omit). */
+  stakedEth?: string
 }
 
 /** POST /wallet/rewards/claim — result of claiming a reward pool. */

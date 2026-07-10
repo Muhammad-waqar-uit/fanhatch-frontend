@@ -8,11 +8,10 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { useModal } from 'connectkit'
-import { ArrowDown, Settings2, Loader2 } from 'lucide-react'
+import { ArrowUpDown, Settings2, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatEther, parseEther } from 'viem'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   useEthBalance,
   useFansBalance,
@@ -146,13 +145,11 @@ export function SwapPanel() {
         ? { label: `Insufficient ${pay.symbol}`, disabled: true }
         : isPending
           ? { label: 'Swapping…', disabled: true }
-          : { label: `Swap ${pay.symbol} for ${receive.symbol}`, disabled: false }
+          : { label: 'Swap Tokens', disabled: false }
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-1.5 pt-4">
-        <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--color-fg)]">Swap</h2>
+    <div className="flex flex-col gap-1.5">
+        <div className="mb-1 flex items-center justify-end">
           <div className="relative">
             <button
               type="button"
@@ -210,7 +207,7 @@ export function SwapPanel() {
         </div>
 
         <TokenField
-          label="You pay"
+          label="Pay"
           token={pay}
           available={available}
           value={amountIn}
@@ -225,16 +222,16 @@ export function SwapPanel() {
             aria-label="Switch direction"
             onClick={flip}
             className={cn(
-              'flex size-9 items-center justify-center rounded-full border-4 border-[var(--color-surface)] bg-[var(--color-surface-2)] text-[var(--color-fg)] transition-all hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-fg)] motion-reduce:transition-none',
+              'flex size-9 items-center justify-center rounded-full border-4 border-[var(--color-surface)] bg-[var(--color-accent)] text-[var(--color-accent-fg)] transition-all hover:opacity-90 motion-reduce:transition-none',
               flipping && 'rotate-180',
             )}
           >
-            <ArrowDown className="size-4" />
+            <ArrowUpDown className="size-4" />
           </button>
         </div>
 
         <TokenField
-          label="You receive"
+          label="Receive"
           token={receive}
           value={amountOut ? formatNumber(num(amountOut), { compact: false }) : ''}
           placeholder={quoting ? '' : '0.0'}
@@ -273,7 +270,6 @@ export function SwapPanel() {
           {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           {cta.label}
         </Button>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

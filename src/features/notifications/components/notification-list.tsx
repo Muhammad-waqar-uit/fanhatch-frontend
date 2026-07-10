@@ -48,7 +48,7 @@ export function NotificationList({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-3">
       {notifications.map((n) => (
         <NotificationItem key={n.id} notification={n} onNavigate={onNavigate} />
       ))}

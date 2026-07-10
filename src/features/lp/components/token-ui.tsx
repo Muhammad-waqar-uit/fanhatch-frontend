@@ -30,7 +30,10 @@ export function TokenPill({ token }: { token: TokenMeta }) {
   )
 }
 
-/** Amount-input row with a token pill, "available" hint, optional MAX + loading. */
+/**
+ * Amount field — a labelled group (label above, input row, "available" hint below),
+ * matching the Figma "Pay / Receive / Deposit" layout. Optional MAX + loading spinner.
+ */
 export function TokenField({
   label,
   token,
@@ -42,7 +45,7 @@ export function TokenField({
   onChange,
   onMax,
 }: {
-  label: string
+  label?: string
   token: TokenMeta
   value: string
   available?: number
@@ -53,12 +56,11 @@ export function TokenField({
   onMax?: () => void
 }) {
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-      <div className="flex items-center justify-between text-xs text-[var(--color-muted)]">
-        <span>{label}</span>
-        {available != null ? <span>{formatNumber(available, { compact: true })} available</span> : null}
-      </div>
-      <div className="mt-1.5 flex items-center gap-2">
+    <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+      {label ? (
+        <span className="text-sm font-medium text-[var(--color-fg)]">{label}</span>
+      ) : null}
+      <div className={cn('flex items-center gap-2 rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2.5', label && 'mt-2')}>
         <div className="relative min-w-0 flex-1">
           <input
             inputMode="decimal"
@@ -70,7 +72,7 @@ export function TokenField({
               'w-full bg-transparent text-2xl font-semibold text-[var(--color-fg)] outline-none placeholder:text-[var(--color-muted)]',
               loading && 'opacity-40',
             )}
-            aria-label={`${label} amount`}
+            aria-label={`${label ?? token.symbol} amount`}
           />
           {loading ? (
             <Loader2 className="absolute left-0 top-1/2 size-4 -translate-y-1/2 animate-spin text-[var(--color-muted)]" />
@@ -87,6 +89,21 @@ export function TokenField({
         ) : null}
         <TokenPill token={token} />
       </div>
+      {available != null ? (
+        <p className="mt-2 text-xs text-[var(--color-muted)]">
+          {formatNumber(available, { compact: true })} {token.symbol} Available
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+/** A framed "label ─ value" row (Balance, LP Bonus …) for the Your LP card. */
+export function KeyValueRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between rounded-[var(--radius)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm">
+      <span className="text-[var(--color-muted)]">{label}</span>
+      <span className="font-semibold text-[var(--color-fg)]">{children}</span>
     </div>
   )
 }

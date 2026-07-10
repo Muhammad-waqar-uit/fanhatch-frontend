@@ -51,7 +51,7 @@ export function NotificationListPage() {
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col">
       <div className="flex items-center justify-between gap-2 px-4 pt-4">
-        <h1 className="text-lg font-semibold">Notifications</h1>
+        <h1 className="text-2xl font-bold">Notifications</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
