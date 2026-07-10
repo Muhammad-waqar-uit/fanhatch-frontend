@@ -25,9 +25,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Chat', href: '/chat', icon: MessageCircle, ready: true },
   { label: 'Wallet', href: '/wallet', icon: Wallet, ready: true },
   { label: 'Notifications', href: '/notifications', icon: Bell, ready: true },
-  { label: 'Discover', href: '/discover', icon: Compass },
-  { label: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
+  { label: 'Discover', href: '/discover', icon: Compass, ready: true },
+  { label: 'Bookmarks', href: '/bookmarks', icon: Bookmark, ready: true },
   { label: 'LP', href: '/lp', icon: Droplets, ready: true },
-  { label: 'Premium', href: '/premium', icon: Crown },
-  { label: 'Referrals', href: '/referrals', icon: Gift },
+  { label: 'Premium', href: '/premium', icon: Crown, ready: true },
+  { label: 'Referrals', href: '/referrals', icon: Gift, ready: true },
 ]
