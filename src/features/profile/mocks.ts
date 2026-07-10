@@ -3,6 +3,7 @@
  * (NEXT_PUBLIC_USE_MOCKS=true). Includes a `self` profile and an `other`
  * profile variant plus the six tab datasets.
  */
+import type { Post } from '@/features/dashboard/types'
 import type { ActivityDto, ClubCardDto, ProfileDto, UserCardDto } from './types'
 
 /** The signed-in mock user id (mirrors the chat feature's convention). */
@@ -24,6 +25,7 @@ export const mockSelfProfile: ProfileDto = {
   keyPrice: '0.042 ETH',
   ownKeyCount: 3,
   viewerRelation: 'self',
+  joinedAt: '2023-03-14T00:00:00.000Z',
   lastSeen: new Date(Date.now() - 2 * 60_000).toISOString(),
   lastMessageAt: new Date(Date.now() - 40 * 60_000).toISOString(),
 }
@@ -42,6 +44,7 @@ export const mockOtherProfile: ProfileDto = {
   keyPrice: '1.337 ETH',
   ownKeyCount: 0,
   viewerRelation: 'other',
+  joinedAt: '2021-06-01T00:00:00.000Z',
   lastSeen: new Date(Date.now() - 6 * 60 * 60_000).toISOString(),
   lastMessageAt: undefined,
 }
@@ -137,5 +140,109 @@ export const mockActivity: ActivityDto[] = [
     type: 'gift',
     ts: new Date(Date.now() - 3 * 24 * 60 * 60_000).toISOString(),
     summary: 'Gifted 1 key of ALPHA to @degen',
+  },
+]
+
+const mockAuthor = {
+  id: MOCK_CURRENT_USER_ID,
+  name: 'You',
+  handle: MOCK_SELF_HANDLE,
+  verified: true,
+}
+
+/** Top-level posts authored by the profile owner (Posts tab). */
+export const mockUserPosts: Post[] = [
+  {
+    id: 'up1',
+    author: mockAuthor,
+    body: 'Shipped a new dashboard for my club today. Key holders get early access. 🔑',
+    createdAt: new Date(Date.now() - 30 * 60_000).toISOString(),
+    stats: { likes: 214, comments: 31, reposts: 18, shares: 7, bookmarks: 22 },
+    liked: false,
+    bookmarked: false,
+  },
+  {
+    id: 'up2',
+    author: mockAuthor,
+    body: 'gm. building in public is the only way. what are you shipping this week?',
+    createdAt: new Date(Date.now() - 5 * 60 * 60_000).toISOString(),
+    stats: { likes: 98, comments: 12, reposts: 4, shares: 2, bookmarks: 9 },
+    liked: true,
+    bookmarked: false,
+  },
+]
+
+/** Replies authored by the profile owner (Replies tab). */
+export const mockUserReplies: Post[] = [
+  {
+    id: 'ur1',
+    author: mockAuthor,
+    body: '@satoshi totally agree — key economics align holders and creators better than anything else.',
+    createdAt: new Date(Date.now() - 90 * 60_000).toISOString(),
+    stats: { likes: 41, comments: 3, reposts: 1, shares: 0, bookmarks: 2 },
+    liked: false,
+    bookmarked: false,
+  },
+  {
+    id: 'ur2',
+    author: mockAuthor,
+    body: '@mirac count me in for the Q&A tonight 👇',
+    createdAt: new Date(Date.now() - 8 * 60 * 60_000).toISOString(),
+    stats: { likes: 12, comments: 1, reposts: 0, shares: 0, bookmarks: 0 },
+    liked: false,
+    bookmarked: false,
+  },
+]
+
+/** Posts the profile owner has liked (Likes tab). */
+export const mockUserLikes: Post[] = [
+  {
+    id: 'ul1',
+    author: { id: 'u_satoshi', name: 'Satoshi', handle: 'satoshi', verified: true },
+    body: 'Peer-to-peer key markets are the purest form of creator monetization.',
+    createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+    stats: { likes: 1203, comments: 88, reposts: 210, shares: 44, bookmarks: 130 },
+    liked: true,
+    bookmarked: false,
+  },
+  {
+    id: 'ul2',
+    author: { id: 'u_vitalik', name: 'Vitalik', handle: 'vitalik', verified: true },
+    body: 'Decentralized social + onchain keys is a genuinely interesting design space.',
+    createdAt: new Date(Date.now() - 26 * 60 * 60_000).toISOString(),
+    stats: { likes: 842, comments: 60, reposts: 120, shares: 30, bookmarks: 90 },
+    liked: true,
+    bookmarked: true,
+  },
+]
+
+/** Posts the signed-in user has bookmarked (Bookmarks screen). */
+export const mockBookmarks: Post[] = [
+  {
+    id: 'bm1',
+    author: { id: 'u_vitalik', name: 'Vitalik', handle: 'vitalik', verified: true },
+    body: 'Decentralized social + onchain keys is a genuinely interesting design space.',
+    createdAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+    stats: { likes: 842, comments: 60, reposts: 120, shares: 30, bookmarks: 90 },
+    liked: false,
+    bookmarked: true,
+  },
+  {
+    id: 'bm2',
+    author: { id: 'u_hayden', name: 'Hayden', handle: 'hayden', verified: false },
+    body: 'Rebalanced my club portfolio. $MIRA momentum is unreal this week.',
+    createdAt: new Date(Date.now() - 20 * 60 * 60_000).toISOString(),
+    stats: { likes: 76, comments: 11, reposts: 4, shares: 2, bookmarks: 6 },
+    liked: true,
+    bookmarked: true,
+    club: {
+      ticker: 'MIRA',
+      priceEth: 0.512,
+      changePct: -3.21,
+      tradingValueEth: -0.014,
+      history: [0.55, 0.548, 0.54, 0.535, 0.52, 0.525, 0.518, 0.514, 0.51, 0.512].map(
+        (price, t) => ({ t, price }),
+      ),
+    },
   },
 ]

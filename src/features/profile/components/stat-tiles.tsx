@@ -30,14 +30,14 @@ export function StatTiles({
           type="button"
           onClick={() => onSelect?.(tile.key)}
           className={cn(
-            'rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-left transition-colors',
+            'rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-colors',
             onSelect && 'hover:bg-[var(--color-surface-2)]',
           )}
         >
-          <p className="text-base font-semibold text-[var(--color-fg)]">
+          <p className="text-xs text-[var(--color-muted)]">{tile.label}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--color-fg)]">
             {formatNumber(stats[tile.key], { compact: true })}
           </p>
-          <p className="text-xs text-[var(--color-muted)]">{tile.label}</p>
         </button>
       ))}
     </div>

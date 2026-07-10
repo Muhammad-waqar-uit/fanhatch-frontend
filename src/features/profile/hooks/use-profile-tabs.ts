@@ -8,6 +8,9 @@ import {
   getFollowing,
   getHolders,
   getHolding,
+  getUserLikes,
+  getUserPosts,
+  getUserReplies,
 } from '../api/profile.api'
 import { profileKeys } from './use-profile'
 
@@ -57,6 +60,30 @@ export function useActivity(id: string, enabled = true) {
   return useQuery({
     queryKey: profileKeys.activity(id),
     queryFn: () => getActivity(id),
+    enabled: enabled && Boolean(id),
+  })
+}
+
+export function useUserPosts(id: string, enabled = true) {
+  return useQuery({
+    queryKey: profileKeys.posts(id),
+    queryFn: () => getUserPosts(id),
+    enabled: enabled && Boolean(id),
+  })
+}
+
+export function useUserReplies(id: string, enabled = true) {
+  return useQuery({
+    queryKey: profileKeys.replies(id),
+    queryFn: () => getUserReplies(id),
+    enabled: enabled && Boolean(id),
+  })
+}
+
+export function useUserLikes(id: string, enabled = true) {
+  return useQuery({
+    queryKey: profileKeys.likes(id),
+    queryFn: () => getUserLikes(id),
     enabled: enabled && Boolean(id),
   })
 }

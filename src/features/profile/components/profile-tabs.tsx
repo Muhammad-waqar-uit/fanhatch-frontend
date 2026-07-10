@@ -1,5 +1,6 @@
 'use client'
 
+import { PostCard } from '@/features/dashboard/components/post-card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { timeAgo } from '@/shared/lib/format'
 import {
@@ -9,6 +10,9 @@ import {
   useFollowing,
   useHolders,
   useHolding,
+  useUserLikes,
+  useUserPosts,
+  useUserReplies,
 } from '../hooks/use-profile-tabs'
 import type { ActivityDto, ProfileDto, ProfileTab } from '../types'
 import { ClubCard } from './club-card'
@@ -21,6 +25,9 @@ const TAB_LABELS: { value: ProfileTab; label: string }[] = [
   { value: 'holding', label: 'Holding' },
   { value: 'followers', label: 'Followers' },
   { value: 'following', label: 'Following' },
+  { value: 'posts', label: 'Posts' },
+  { value: 'replies', label: 'Replies' },
+  { value: 'likes', label: 'Likes' },
 ]
 
 /** Shared loading / empty scaffolding for a tab body. */
@@ -68,6 +75,9 @@ export function ProfileTabs({
   onValueChange: (tab: ProfileTab) => void
 }) {
   const id = profile.id
+  const posts = useUserPosts(id, value === 'posts')
+  const replies = useUserReplies(id, value === 'replies')
+  const likes = useUserLikes(id, value === 'likes')
   const clubs = useClubs(id, value === 'clubs')
   const activity = useActivity(id, value === 'activity')
   const holders = useHolders(id, value === 'holders')
@@ -86,6 +96,34 @@ export function ProfileTabs({
       </TabsList>
 
       <div className="mt-3">
+        <TabsContent value="posts">
+          <TabState isLoading={posts.isLoading} isEmpty={!posts.data?.length} emptyText="No posts yet.">
+            <div className="flex flex-col gap-3">
+              {posts.data?.map((post) => <PostCard key={post.id} post={post} />)}
+            </div>
+          </TabState>
+        </TabsContent>
+
+        <TabsContent value="replies">
+          <TabState
+            isLoading={replies.isLoading}
+            isEmpty={!replies.data?.length}
+            emptyText="No replies yet."
+          >
+            <div className="flex flex-col gap-3">
+              {replies.data?.map((post) => <PostCard key={post.id} post={post} />)}
+            </div>
+          </TabState>
+        </TabsContent>
+
+        <TabsContent value="likes">
+          <TabState isLoading={likes.isLoading} isEmpty={!likes.data?.length} emptyText="No likes yet.">
+            <div className="flex flex-col gap-3">
+              {likes.data?.map((post) => <PostCard key={post.id} post={post} />)}
+            </div>
+          </TabState>
+        </TabsContent>
+
         <TabsContent value="clubs">
           <TabState isLoading={clubs.isLoading} isEmpty={!clubs.data?.length} emptyText="No clubs yet.">
             <div className="flex flex-col">

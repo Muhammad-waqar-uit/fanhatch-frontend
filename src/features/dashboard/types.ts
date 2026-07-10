@@ -53,6 +53,8 @@ export interface Post {
   status?: PostStatus
   /** ISO time a scheduled post should publish. */
   scheduledAt?: string
+  /** When set, this post is a reply to the post with this id. */
+  parentId?: string
 }
 
 export type TradeSide = 'buy' | 'sell'

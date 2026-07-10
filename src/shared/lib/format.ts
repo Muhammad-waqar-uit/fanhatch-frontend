@@ -21,6 +21,15 @@ export function formatPct(value: number): string {
   return `${sign}${value.toFixed(2)}%`
 }
 
+/** "Joined June 2024" style label from an ISO join date. */
+export function formatJoinDate(iso: string): string {
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(iso))
+  return `Joined ${formatted}`
+}
+
 /** Relative "2m ago" style time from an ISO string or Date. */
 export function timeAgo(input: string | Date): string {
   const date = typeof input === 'string' ? new Date(input) : input

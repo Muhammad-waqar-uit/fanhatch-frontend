@@ -5,6 +5,7 @@
  */
 import { apiClient } from '@/shared/api/client'
 import { env } from '@/config/env'
+import type { Post } from '@/features/dashboard/types'
 import { getCurrentUserId } from '../lib/current-user'
 import {
   MOCK_CURRENT_USER_ID,
@@ -16,6 +17,9 @@ import {
   mockHolding,
   mockProfilesByHandle,
   mockSelfProfile,
+  mockUserLikes,
+  mockUserPosts,
+  mockUserReplies,
 } from '../mocks'
 import type {
   ActivityDto,
@@ -143,6 +147,36 @@ export async function getActivity(id: string): Promise<ActivityDto[]> {
     return [...mockActivity]
   }
   const page = (await apiClient.get(`/users/${id}/activity`)) as unknown as Page<ActivityDto>
+  return page.items
+}
+
+/** GET /users/:id/posts — the user's top-level posts (newest first). */
+export async function getUserPosts(id: string): Promise<Post[]> {
+  if (env.useMocks) {
+    await delay()
+    return [...mockUserPosts]
+  }
+  const page = (await apiClient.get(`/users/${id}/posts`)) as unknown as Page<Post>
+  return page.items
+}
+
+/** GET /users/:id/replies — the user's replies (newest first). */
+export async function getUserReplies(id: string): Promise<Post[]> {
+  if (env.useMocks) {
+    await delay()
+    return [...mockUserReplies]
+  }
+  const page = (await apiClient.get(`/users/${id}/replies`)) as unknown as Page<Post>
+  return page.items
+}
+
+/** GET /users/:id/likes — posts the user has liked (newest first). */
+export async function getUserLikes(id: string): Promise<Post[]> {
+  if (env.useMocks) {
+    await delay()
+    return [...mockUserLikes]
+  }
+  const page = (await apiClient.get(`/users/${id}/likes`)) as unknown as Page<Post>
   return page.items
 }
 

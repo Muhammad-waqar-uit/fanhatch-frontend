@@ -12,6 +12,9 @@ export const profileKeys = {
   holding: (id: string) => ['profile', id, 'holding'] as const,
   holders: (id: string) => ['profile', id, 'holders'] as const,
   activity: (id: string) => ['profile', id, 'activity'] as const,
+  posts: (id: string) => ['profile', id, 'posts'] as const,
+  replies: (id: string) => ['profile', id, 'replies'] as const,
+  likes: (id: string) => ['profile', id, 'likes'] as const,
 }
 
 /** Load a profile by @handle. */

@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/cn'
 import { timeAgo } from '@/shared/lib/format'
 import { useFeed } from '../hooks/use-feed'
 import type { FeedFilter, TradeActivity } from '../types'
+import { NewMembersCard } from './new-members-card'
 import { PostCard } from './post-card'
 
 function initials(name: string) {
@@ -104,7 +105,13 @@ export function Feed() {
           <div className="flex flex-col gap-3">
             {filter === 'transactions'
               ? trades.map((t) => <TradeRow key={t.id} trade={t} />)
-              : posts.map((p) => <PostCard key={p.id} post={p} />)}
+              : posts.map((p, i) => (
+                  <Fragment key={p.id}>
+                    <PostCard post={p} />
+                    {/* New-members referral hook surfaces after the first post. */}
+                    {i === 0 ? <NewMembersCard /> : null}
+                  </Fragment>
+                ))}
 
             {filter === 'transactions' && trades.length === 0 ? (
               <Card>

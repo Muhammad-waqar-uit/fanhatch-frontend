@@ -5,7 +5,7 @@
  */
 import { apiClient } from '@/shared/api/client'
 import { env } from '@/config/env'
-import { mockDrafts, mockFeed, mockScheduled, mockTrending } from './../mocks'
+import { mockDrafts, mockFeed, mockReplies, mockScheduled, mockTrending } from './../mocks'
 import type {
   CreatePostInput,
   FeedFilter,
@@ -24,6 +24,18 @@ const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 export interface LikeResult {
   liked: boolean
   likes: number
+}
+
+/** Result of a repost/unrepost toggle, mirroring the backend contract. */
+export interface RepostResult {
+  reposted: boolean
+  reposts: number
+}
+
+/** Result of a bookmark/unbookmark toggle, mirroring the backend contract. */
+export interface BookmarkResult {
+  bookmarked: boolean
+  bookmarks: number
 }
 
 /**
@@ -58,6 +70,7 @@ function mapPost(raw: unknown): Post {
     club: p.club,
     status: p.status,
     scheduledAt: p.scheduledAt,
+    parentId: p.parentId,
   }
 }
 
@@ -150,6 +163,19 @@ export async function getMyPosts(status: PostStatus): Promise<Post[]> {
   const res = (await apiClient.get('/posts/me', { params: { status } })) as unknown
   const items = Array.isArray(res) ? res : ((res as { items?: unknown[] })?.items ?? [])
   return items.map(mapPost)
+}
+
+/** Locate a mock post across every list (feed, scheduled, drafts, replies). */
+function findMockPost(id: string): Post | undefined {
+  for (const list of [mockFeed.posts, mockScheduled, mockDrafts]) {
+    const found = list.find((p) => p.id === id)
+    if (found) return found
+  }
+  for (const replies of Object.values(mockReplies)) {
+    const found = replies.find((p) => p.id === id)
+    if (found) return found
+  }
+  return undefined
 }
 
 /** Locate a mock post across all lists and remove it, returning it. */
@@ -250,4 +276,112 @@ export async function unlikePost(id: string): Promise<LikeResult> {
     return { liked: false, likes: post?.stats.likes ?? 0 }
   }
   return apiClient.delete(`/posts/${id}/like`) as unknown as Promise<LikeResult>
+}
+
+/** Fetch a single post by id. Real: GET /posts/:id → post. */
+export async function getPost(id: string): Promise<Post> {
+  if (env.useMocks) {
+    await delay(200)
+    const post = findMockPost(id)
+    if (!post) throw new Error('Post not found')
+    return mapPost(post)
+  }
+  const raw = await apiClient.get(`/posts/${id}`)
+  return mapPost(raw)
+}
+
+/**
+ * List a post's replies (oldest-first). Real: GET /posts/:id/replies?page=&limit=.
+ * Reads the response defensively (bare array or `{ items }`), mapped through mapPost.
+ */
+export async function getReplies(id: string, page = 1): Promise<Post[]> {
+  if (env.useMocks) {
+    await delay(200)
+    return (mockReplies[id] ?? []).map(mapPost)
+  }
+  const res = (await apiClient.get(`/posts/${id}/replies`, {
+    params: { page, limit: 20 },
+  })) as unknown
+  const items = Array.isArray(res) ? res : ((res as { items?: unknown[] })?.items ?? [])
+  return items.map(mapPost)
+}
+
+/** Reply to a post. Real: POST /posts { body, parentId } → post. */
+export async function createReply(parentId: string, body: string): Promise<Post> {
+  if (env.useMocks) {
+    await delay(400)
+    const reply: Post = {
+      id: `local-${crypto.randomUUID()}`,
+      author: { id: 'me', name: 'You', handle: 'you', verified: false },
+      body,
+      createdAt: new Date().toISOString(),
+      stats: { likes: 0, comments: 0, reposts: 0, shares: 0, bookmarks: 0 },
+      liked: false,
+      bookmarked: false,
+      reposted: false,
+      parentId,
+    }
+    ;(mockReplies[parentId] ??= []).push(reply)
+    const parent = findMockPost(parentId)
+    if (parent) parent.stats.comments += 1
+    return mapPost(reply)
+  }
+  const raw = await apiClient.post('/posts', { body, parentId })
+  return mapPost(raw)
+}
+
+/** Repost a post. Real: POST /posts/:id/repost → { reposted, reposts }. */
+export async function repost(id: string): Promise<RepostResult> {
+  if (env.useMocks) {
+    await delay(150)
+    const post = findMockPost(id)
+    if (post && !post.reposted) {
+      post.reposted = true
+      post.stats.reposts += 1
+    }
+    return { reposted: true, reposts: post?.stats.reposts ?? 0 }
+  }
+  return apiClient.post(`/posts/${id}/repost`) as unknown as Promise<RepostResult>
+}
+
+/** Undo a repost. Real: DELETE /posts/:id/repost → { reposted, reposts }. */
+export async function unrepost(id: string): Promise<RepostResult> {
+  if (env.useMocks) {
+    await delay(150)
+    const post = findMockPost(id)
+    if (post && post.reposted) {
+      post.reposted = false
+      post.stats.reposts = Math.max(0, post.stats.reposts - 1)
+    }
+    return { reposted: false, reposts: post?.stats.reposts ?? 0 }
+  }
+  return apiClient.delete(`/posts/${id}/repost`) as unknown as Promise<RepostResult>
+}
+
+/** Bookmark a post. Real: POST /posts/:id/bookmark → { bookmarked, bookmarks }. */
+export async function bookmarkPost(id: string): Promise<BookmarkResult> {
+  if (env.useMocks) {
+    await delay(150)
+    const post = findMockPost(id)
+    if (post && !post.bookmarked) {
+      post.bookmarked = true
+      post.stats.bookmarks += 1
+    }
+    return { bookmarked: true, bookmarks: post?.stats.bookmarks ?? 0 }
+  }
+  return apiClient.post(`/posts/${id}/bookmark`) as unknown as Promise<BookmarkResult>
+}
+
+/** Remove a bookmark. Real: DELETE /posts/:id/bookmark → { bookmarked, bookmarks }. */
+export async function unbookmarkPost(id: string): Promise<BookmarkResult> {
+  if (env.useMocks) {
+    await delay(150)
+    const post = findMockPost(id)
+    if (post && post.bookmarked) {
+      post.bookmarked = false
+      post.stats.bookmarks = Math.max(0, post.stats.bookmarks - 1)
+    }
+    return { bookmarked: false, bookmarks: post?.stats.bookmarks ?? 0 }
+  }
+  return apiClient.delete(`/posts/${id}/bookmark`) as unknown as Promise<BookmarkResult>
 }

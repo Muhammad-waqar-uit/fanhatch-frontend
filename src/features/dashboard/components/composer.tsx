@@ -1,7 +1,20 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, Globe, Hash, Instagram, Linkedin, Twitter } from 'lucide-react'
+import {
+  Calendar,
+  CalendarClock,
+  Globe,
+  Hash,
+  Image as ImageIcon,
+  Images,
+  Instagram,
+  Linkedin,
+  MapPin,
+  Plus,
+  Smile,
+  Twitter,
+} from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -68,10 +81,39 @@ function PlatformChip({
       aria-pressed={active}
       title={label}
       className={cn(
-        'inline-flex size-8 items-center justify-center rounded-full border transition-colors',
+        'inline-flex size-8 items-center justify-center rounded-md border transition-colors',
         active
           ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
           : 'border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-fg)]',
+      )}
+    >
+      <Icon className="size-4" />
+    </button>
+  )
+}
+
+/** Compose toolbar affordance (media, emoji, schedule, location). */
+function ToolbarButton({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: typeof Twitter
+  label: string
+  active?: boolean
+  onClick?: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      aria-pressed={onClick ? active : undefined}
+      className={cn(
+        'inline-flex size-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-surface-2)]',
+        active ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)] hover:text-[var(--color-fg)]',
       )}
     >
       <Icon className="size-4" />
@@ -110,7 +152,9 @@ export function Composer() {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState('post')
   const [body, setBody] = useState('')
-  const [crossPost, setCrossPost] = useState<string[]>([])
+  const [crossPost, setCrossPost] = useState<string[]>(['x'])
+  const [showAllPlatforms, setShowAllPlatforms] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
   const [scheduleAt, setScheduleAt] = useState('')
   // Inline reschedule editor state (scheduled tab).
   const [rescheduleId, setRescheduleId] = useState<string | null>(null)
@@ -128,7 +172,7 @@ export function Composer() {
   const togglePlatform = (id: string) =>
     setCrossPost((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
 
-  const willSchedule = scheduleAt.trim().length > 0
+  const willSchedule = showSchedule && scheduleAt.trim().length > 0
   const scheduleInvalid = willSchedule && !isFuture(scheduleAt)
 
   const create = useMutation({
@@ -184,47 +228,17 @@ export function Composer() {
     <Card>
       <CardContent className="p-4">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="post">Post</TabsTrigger>
-            <TabsTrigger value="scheduled">Scheduled ({scheduledPosts.length})</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts ({draftPosts.length})</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)]">
+            <TabsList className="border-b-0">
+              <TabsTrigger value="post">Post</TabsTrigger>
+              <TabsTrigger value="scheduled">Scheduled ({scheduledPosts.length})</TabsTrigger>
+              <TabsTrigger value="drafts">Drafts ({draftPosts.length})</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="post" className="mt-3 focus-visible:outline-none">
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="share next big thing…"
-              rows={3}
-              className="w-full resize-none bg-transparent text-sm text-[var(--color-fg)] outline-none placeholder:text-[var(--color-muted)]"
-            />
-
-            <label className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
-              <CalendarClock className="size-4 shrink-0" />
-              <span className="shrink-0">Schedule for later</span>
-              <Input
-                type="datetime-local"
-                value={scheduleAt}
-                onChange={(e) => setScheduleAt(e.target.value)}
-                className="h-8 max-w-[220px] text-xs"
-              />
-              {scheduleAt && (
-                <button
-                  type="button"
-                  onClick={() => setScheduleAt('')}
-                  className="text-[var(--color-accent)] hover:opacity-80"
-                >
-                  clear
-                </button>
-              )}
-            </label>
-            {scheduleInvalid && (
-              <p className="mt-1 text-xs text-[var(--color-danger,#ef4444)]">Pick a time in the future.</p>
-            )}
-
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                {PLATFORMS.map((p) => (
+            {tab === 'post' ? (
+              <div className="flex items-center gap-1.5">
+                <span className="mr-1 hidden text-xs text-[var(--color-muted)] sm:inline">Post on</span>
+                {PLATFORMS.slice(0, 3).map((p) => (
                   <PlatformChip
                     key={p.id}
                     label={p.label}
@@ -233,16 +247,91 @@ export function Composer() {
                     onClick={() => togglePlatform(p.id)}
                   />
                 ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!body.trim() || composeBusy}
-                  onClick={() => saveDraft.mutate()}
+                {showAllPlatforms
+                  ? PLATFORMS.slice(3).map((p) => (
+                      <PlatformChip
+                        key={p.id}
+                        label={p.label}
+                        icon={p.icon}
+                        active={crossPost.includes(p.id)}
+                        onClick={() => togglePlatform(p.id)}
+                      />
+                    ))
+                  : null}
+                <button
+                  type="button"
+                  onClick={() => setShowAllPlatforms((v) => !v)}
+                  aria-pressed={showAllPlatforms}
+                  aria-label="More platforms"
+                  title="More platforms"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)]"
                 >
-                  Save draft
-                </Button>
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <TabsContent value="post" className="mt-3 focus-visible:outline-none">
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Share next big thing..."
+              rows={3}
+              className="w-full resize-none bg-transparent text-sm text-[var(--color-fg)] outline-none placeholder:text-[var(--color-muted)]"
+            />
+
+            {showSchedule && (
+              <label className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                <CalendarClock className="size-4 shrink-0" />
+                <span className="shrink-0">Schedule for later</span>
+                <Input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                  className="h-8 max-w-[220px] text-xs"
+                />
+                {scheduleAt && (
+                  <button
+                    type="button"
+                    onClick={() => setScheduleAt('')}
+                    className="text-[var(--color-accent)] hover:opacity-80"
+                  >
+                    clear
+                  </button>
+                )}
+              </label>
+            )}
+            {scheduleInvalid && (
+              <p className="mt-1 text-xs text-[var(--color-danger,#ef4444)]">Pick a time in the future.</p>
+            )}
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-0.5">
+                <ToolbarButton icon={ImageIcon} label="Add image" />
+                <ToolbarButton icon={Images} label="Add media" />
+                <ToolbarButton icon={Smile} label="Add emoji" />
+                <ToolbarButton
+                  icon={Calendar}
+                  label="Schedule for later"
+                  active={showSchedule}
+                  onClick={() => setShowSchedule((v) => !v)}
+                />
+                <ToolbarButton icon={MapPin} label="Add location" />
+              </div>
+              <div className="flex items-center gap-3">
+                {body.trim() ? (
+                  <button
+                    type="button"
+                    disabled={composeBusy}
+                    onClick={() => saveDraft.mutate()}
+                    className="text-xs font-medium text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] disabled:opacity-40"
+                  >
+                    Save draft
+                  </button>
+                ) : (
+                  <span className="text-sm text-[var(--color-muted)]">Start Writing</span>
+                )}
                 <Button
                   variant="primary"
                   size="sm"

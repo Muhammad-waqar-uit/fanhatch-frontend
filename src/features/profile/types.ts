@@ -33,6 +33,8 @@ export interface ProfileDto {
   /** Creator/own only — viewer's balance of this owner's key. */
   ownKeyCount?: number
   viewerRelation: ViewerRelation
+  /** ISO timestamp the user joined — drives the "Joined <Month Year>" line. */
+  joinedAt?: string
   /** ISO timestamp for the "Last seen …" presence line. */
   lastSeen?: string
   /** ISO timestamp for the "Last message sent …" presence line. */
@@ -80,5 +82,14 @@ export interface UpdateProfileInput {
   socials?: ProfileSocials
 }
 
-/** The six profile tabs. */
-export type ProfileTab = 'clubs' | 'activity' | 'holders' | 'holding' | 'followers' | 'following'
+/** The profile tabs: social/crypto tabs plus the X-style Posts / Replies / Likes. */
+export type ProfileTab =
+  | 'posts'
+  | 'replies'
+  | 'likes'
+  | 'clubs'
+  | 'activity'
+  | 'holders'
+  | 'holding'
+  | 'followers'
+  | 'following'

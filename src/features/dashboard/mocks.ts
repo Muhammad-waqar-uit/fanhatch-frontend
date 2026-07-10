@@ -159,4 +159,36 @@ export const mockDrafts: Post[] = [
   myPost({ id: 'd1', body: 'Some thoughts on where creator clubs go next…', status: 'draft', createdAt: minutesAgo(120) }),
 ]
 
+/**
+ * Replies keyed by parent post id (oldest-first, matching the backend's
+ * GET /posts/:id/replies ordering). Mutable source of truth in mock mode —
+ * createReply pushes here and getReplies reads from here.
+ */
+export const mockReplies: Record<string, Post[]> = {
+  p1: [
+    {
+      id: 'r1',
+      author: { id: 'u4', name: 'Sasha Lee', handle: 'sashal', verified: true },
+      body: 'lfg 🔑 been holding since day one',
+      createdAt: minutesAgo(3),
+      stats: { likes: 12, comments: 1, reposts: 0, shares: 0, bookmarks: 1 },
+      liked: false,
+      bookmarked: false,
+      reposted: false,
+      parentId: 'p1',
+    },
+    {
+      id: 'r2',
+      author: { id: 'u5', name: 'Tomás Vidal', handle: 'tomasv' },
+      body: 'any hints on the roadmap? 👀',
+      createdAt: minutesAgo(1),
+      stats: { likes: 4, comments: 0, reposts: 0, shares: 0, bookmarks: 0 },
+      liked: false,
+      bookmarked: false,
+      reposted: false,
+      parentId: 'p1',
+    },
+  ],
+}
+
 export const NEW_MEMBERS_COUNT = 6873

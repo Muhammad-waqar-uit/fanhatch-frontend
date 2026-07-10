@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { formatNumber } from '@/shared/lib/format'
 import type { ClubCardDto } from '../types'
 
@@ -13,7 +14,7 @@ export function ClubCard({ club }: { club: ClubCardDto }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-medium text-[var(--color-fg)]">{club.name}</p>
-          <span className="shrink-0 text-xs text-[var(--color-muted)]">FT#{club.ftId}</span>
+          <Badge className="shrink-0">FT#{club.ftId}</Badge>
         </div>
         {club.description ? (
           <p className="truncate text-xs text-[var(--color-muted)]">{club.description}</p>
