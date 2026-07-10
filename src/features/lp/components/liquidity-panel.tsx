@@ -154,7 +154,7 @@ function AddForm({
           LP Fees
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--color-muted)]">
-          Fans.tech takes 1.5% of all $FANS/ETH swaps (collected to your LP automatically) and 1.5% of
+          Fanhatch takes 1.5% of all $FANS/ETH swaps (collected to your LP automatically) and 1.5% of
           all Club key swaps. Added at the current pool ratio — any excess is refunded.
         </p>
       </div>

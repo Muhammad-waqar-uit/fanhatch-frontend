@@ -1,8 +1,8 @@
 {
-  "name": "fans-tech-frontend",
+  "name": "fanhatch-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Fans.tech web2 frontend (Next.js) — dashboard + chat. Feature-sliced, scalable.",
+  "description": "Fanhatch web2 frontend (Next.js) — dashboard + chat. Feature-sliced, scalable.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

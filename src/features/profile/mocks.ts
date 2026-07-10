@@ -17,7 +17,7 @@ export const mockSelfProfile: ProfileDto = {
   handle: MOCK_SELF_HANDLE,
   displayName: 'You',
   userNumber: 1042,
-  bio: 'Building on Fans.tech. Trading keys, running my club.',
+  bio: 'Building on Fanhatch. Trading keys, running my club.',
   avatarUrl: undefined,
   walletAddress: '0x8f3c...a91d',
   socials: { x: 'you_onchain', farcaster: 'you' },

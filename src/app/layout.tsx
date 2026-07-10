@@ -4,7 +4,7 @@ import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Fans.tech',
+  title: 'Fanhatch',
   description: 'Social-token platform — clubs, keys, chat, and a creator wallet.',
 }
 

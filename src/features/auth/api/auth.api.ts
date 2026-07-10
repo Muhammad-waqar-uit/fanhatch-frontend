@@ -42,7 +42,7 @@ export async function register(input: LoginInput): Promise<AuthResponse> {
 /** GET /auth/me → the authenticated principal. */
 export async function getMe(): Promise<AuthUser> {
   if (env.useMocks) {
-    return delay(mockUser('alice@fans.tech'))
+    return delay(mockUser('alice@fanhatch.tech'))
   }
   return apiClient.get<unknown, AuthUser>('/auth/me')
 }

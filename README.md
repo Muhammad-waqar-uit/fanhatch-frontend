@@ -1,8 +1,8 @@
-# Fans.tech Frontend
+# Fanhatch Frontend
 
-Web2 Next.js frontend (App Router) for Fans.tech, mirroring the `mvmnt-user-dashboard`
+Web2 Next.js frontend (App Router) for Fanhatch, mirroring the `mvmnt-user-dashboard`
 **feature-sliced architecture** — scalability first. **No web3 libs** (no Biconomy/MetaMask) for
-now; an API/WS client layer is ready to wire to `fans-tech-backend`.
+now; an API/WS client layer is ready to wire to `fanhatch-backend`.
 
 Built screens: **Home (dashboard)** + **Chat**. Other nav items render a "coming soon" stub.
 

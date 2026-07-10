@@ -8,9 +8,9 @@ const hoursAgoIso = (h: number): string => new Date(Date.now() - h * 3_600_000).
 
 export const mockClubRooms: ChatRoom[] = [
   {
-    id: 'club-fanstech',
+    id: 'club-fanhatch',
     type: 'club',
-    name: 'Fans.tech Founders',
+    name: 'Fanhatch Founders',
     avatarUrl: 'https://i.pravatar.cc/96?img=12',
     lastMessage: 'gm holders, key buybacks are live',
     lastMessageAt: hoursAgoIso(2),
@@ -18,7 +18,7 @@ export const mockClubRooms: ChatRoom[] = [
     unread: 3,
     gated: true,
     memberCount: 248,
-    clubId: 'club-fanstech',
+    clubId: 'club-fanhatch',
   },
   {
     id: 'club-degen',
@@ -130,10 +130,10 @@ const minutesAgo = (m: number) => new Date(now - m * 60_000).toISOString()
 
 /** Seed messages keyed by room id. */
 export const mockMessages: Record<string, ChatMessage[]> = {
-  'club-fanstech': [
+  'club-fanhatch': [
     {
       id: 'm1',
-      roomId: 'club-fanstech',
+      roomId: 'club-fanhatch',
       senderId: 'u-jordan',
       senderName: 'Jordan',
       senderHandle: 'jordan',
@@ -144,7 +144,7 @@ export const mockMessages: Record<string, ChatMessage[]> = {
     },
     {
       id: 'm2',
-      roomId: 'club-fanstech',
+      roomId: 'club-fanhatch',
       senderId: MOCK_CURRENT_USER_ID,
       senderName: 'You',
       body: "let's go, what's the floor looking like?",
@@ -153,7 +153,7 @@ export const mockMessages: Record<string, ChatMessage[]> = {
     },
     {
       id: 'm3',
-      roomId: 'club-fanstech',
+      roomId: 'club-fanhatch',
       senderId: 'u-priya',
       senderName: 'Priya',
       senderHandle: 'priya',

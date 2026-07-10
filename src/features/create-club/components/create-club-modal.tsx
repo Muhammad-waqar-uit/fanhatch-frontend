@@ -26,7 +26,7 @@ function IntroStep({ onContinue }: { onContinue: () => void }) {
         <p>Keyholders vote for the club president, who manages the club and chooses moderators.</p>
         <p>
           Club keys are transacted in <span className="text-[var(--color-accent)]">$FANS</span>. Each
-          transaction has 1.5% fees that are distributed to farmers and Fans.tech.
+          transaction has 1.5% fees that are distributed to farmers and Fanhatch.
         </p>
         <p>
           Clubs can have the same name, so make sure to always check for its unique{' '}

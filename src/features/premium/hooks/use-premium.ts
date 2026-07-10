@@ -1,8 +1,13 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getPlans, getSubscription, subscribe } from '../api/premium.api'
+import { getPlans, getStorageUsage, getSubscription, subscribe } from '../api/premium.api'
 import type { PlanId } from '../types'
+
+/** Media storage used vs the plan allowance. retry:false so logged-out is quiet. */
+export function useStorageUsage() {
+  return useQuery({ queryKey: ['media', 'usage'], queryFn: getStorageUsage, retry: false })
+}
 
 export function usePlans() {
   return useQuery({ queryKey: ['premium', 'plans'], queryFn: getPlans })

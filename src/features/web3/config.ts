@@ -46,7 +46,7 @@ export const wagmiConfig = createConfig(
       [sepolia.id]: http(web3Config.rpcUrl || undefined),
     },
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '',
-    appName: 'Fans.tech',
+    appName: 'Fanhatch',
     ssr: true,
   }),
 )

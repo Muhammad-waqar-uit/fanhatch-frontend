@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { LoginForm } from '@/features/auth'
 
 export const metadata: Metadata = {
-  title: 'Sign in — Fans.tech',
+  title: 'Sign in — Fanhatch',
 }
 
 /** Standalone auth page (outside the (app) group, so no sidebar/topbar). */

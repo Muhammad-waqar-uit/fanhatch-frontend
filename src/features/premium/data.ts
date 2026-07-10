@@ -1,6 +1,6 @@
 /**
  * Static plan + upgrade data for the Premium screen. UI-only: hardcoded to
- * mirror the Fans.tech figma "Select a plan" reference — no API calls.
+ * mirror the Fanhatch figma "Select a plan" reference — no API calls.
  */
 import type { Plan, UpgradeReason } from './types'
 
@@ -47,7 +47,7 @@ export const PLANS: Plan[] = [
     current: false,
     cta: 'Select Plan',
     features: [
-      'Fans.tech Studio',
+      'Fanhatch Studio',
       'Long-form publishing & tipping',
       'Cross-platform Ads Suite',
       'Create & manage paid campaigns',
@@ -62,7 +62,7 @@ export const PLANS: Plan[] = [
 /** Intro paragraphs shown on the left of the "Why Upgrade?" section. */
 export const UPGRADE_INTRO: string[] = [
   'Become a power creator and help shape the future. Open protocols give us the opportunity to regain control over our online presence.',
-  "At Fans.tech, we don't rely on advertising revenue. We don't monetize your data. Our sole focus is to make the best possible product for our creators.",
+  "At Fanhatch, we don't rely on advertising revenue. We don't monetize your data. Our sole focus is to make the best possible product for our creators.",
   'By signing up for a paid plan, you directly fund independent, creator-owned infrastructure — and help us keep building in the open.',
 ]
 

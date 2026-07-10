@@ -8,6 +8,7 @@
  */
 import { usePlans, useSubscribe, useSubscription } from '../hooks/use-premium'
 import { PlanCard } from './plan-card'
+import { StorageBar } from './storage-bar'
 import { WhyUpgrade } from './why-upgrade'
 
 export function PremiumScreen() {
@@ -22,9 +23,11 @@ export function PremiumScreen() {
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-[var(--color-fg)]">Select a plan</h1>
           <p className="text-sm text-[var(--color-muted)]">
-            Upgrade your Fans.tech experience today
+            Upgrade your Fanhatch experience today
           </p>
         </header>
+
+        <StorageBar />
 
         <div className="grid gap-5 md:grid-cols-3">
           {plans.map((plan) => {

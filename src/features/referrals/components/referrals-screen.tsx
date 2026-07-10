@@ -6,7 +6,7 @@ import { ShareTo } from './share-to'
 /**
  * Referrals screen (UI-only, no backend). A centered hero, a 2x2 grid of reward
  * tiles, a "Refer via" section (link + code cards) and a "Share to" row. All
- * values are hardcoded from the Fans.tech figma reference.
+ * values are hardcoded from the Fanhatch figma reference.
  */
 export function ReferralsScreen() {
   return (

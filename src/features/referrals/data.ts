@@ -14,7 +14,7 @@ import {
 
 /**
  * Static, UI-only content for the Referrals screen. Values are copied verbatim
- * from the Fans.tech figma reference — there is no backend here.
+ * from the Fanhatch figma reference — there is no backend here.
  */
 
 export const REFERRAL_HERO = {
@@ -24,7 +24,7 @@ export const REFERRAL_HERO = {
   subtitle: 'Share your link and get $10 USDT for every friend who joins and trades',
 } as const
 
-export const REFERRAL_LINK = 'http://fans.tech/join/fans2026'
+export const REFERRAL_LINK = 'http://fanhatch.tech/join/fans2026'
 export const REFERRAL_CODE = 'FANS2026'
 
 export type RewardTile = {

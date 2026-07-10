@@ -41,7 +41,7 @@ function buildSiweMessage(params: {
     `${domain} wants you to sign in with your Ethereum account:`,
     address,
     '',
-    'Sign in to Fans.tech',
+    'Sign in to Fanhatch',
     '',
     `URI: ${uri}`,
     'Version: 1',

@@ -170,7 +170,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
   WELCOME: {
     icon: Sparkles,
     accent: 'text-[var(--color-accent)]',
-    title: () => 'Welcome to Fans.tech',
+    title: () => 'Welcome to Fanhatch',
     body: () => 'Join a club to start earning key rewards.',
     href: () => '/',
   },

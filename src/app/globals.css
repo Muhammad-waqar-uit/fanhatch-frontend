@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Dark theme matching the Fans.tech figma (near-black surfaces, blue accent). */
+/* Dark theme matching the Fanhatch figma (near-black surfaces, blue accent). */
 @theme {
   --color-bg: #0a0b0d;
   --color-surface: #121316;

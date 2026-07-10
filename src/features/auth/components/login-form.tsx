@@ -22,7 +22,7 @@ function errorMessage(error: unknown, mode: 'login' | 'register'): string {
 export function LoginForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   // Dev placeholders — the seed will have these creds.
-  const [email, setEmail] = useState('alice@fans.tech')
+  const [email, setEmail] = useState('alice@fanhatch.tech')
   const [password, setPassword] = useState('password123')
 
   const mutation = useLoginMutation()
@@ -57,7 +57,7 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="alice@fans.tech"
+          placeholder="alice@fanhatch.tech"
         />
       </div>
 

@@ -49,7 +49,7 @@ export function DiscoverScreen() {
         <div>
           <h1 className="text-lg font-semibold text-[var(--color-fg)]">Discover</h1>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Explore trending clubs and creators across Fans.tech.
+            Explore trending clubs and creators across Fanhatch.
           </p>
         </div>
 

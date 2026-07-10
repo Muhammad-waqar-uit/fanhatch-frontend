@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/shared/lib/format'
 import { useFollowMutation, useProfile } from '../hooks/use-profile'
 import type { ProfileDto, ProfileTab } from '../types'
+import { StorageBar } from '@/features/premium'
 import { EditProfileModal } from './edit-profile-modal'
 import { ProfileHeader } from './profile-header'
 import { ProfileTabs } from './profile-tabs'
@@ -164,6 +165,7 @@ export function ProfileScreen({ handle }: { handle: string }) {
               links={<ProfileLinks profile={profile} />}
             />
             <StatTiles stats={profile.stats} onSelect={setTab} />
+            {profile.viewerRelation === 'self' ? <StorageBar /> : null}
             <ProfileTabs profile={profile} value={tab} onValueChange={setTab} />
 
             {profile.viewerRelation === 'self' ? (

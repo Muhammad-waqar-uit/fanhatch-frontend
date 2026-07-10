@@ -44,3 +44,15 @@ export async function subscribe(planId: PlanId): Promise<Subscription> {
   if (env.useMocks) return { plan: planId, since: null }
   return apiClient.post('/premium/subscribe', { planId }) as unknown as Promise<Subscription>
 }
+
+export interface StorageUsage {
+  plan: PlanId
+  usedBytes: number
+  limitBytes: number
+}
+
+/** Media storage used vs the plan allowance (GET /media/usage). */
+export async function getStorageUsage(): Promise<StorageUsage> {
+  if (env.useMocks) return { plan: 'free', usedBytes: 0, limitBytes: 1024 ** 3 }
+  return apiClient.get('/media/usage') as unknown as Promise<StorageUsage>
+}
