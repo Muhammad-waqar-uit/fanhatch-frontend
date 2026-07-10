@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ImageUpload } from '@/shared/components/image-upload'
 import { useUpdateProfile } from '../hooks/use-profile'
 import type { ProfileDto } from '../types'
 
@@ -90,10 +91,16 @@ export function EditProfileModal({
             />
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-[var(--color-muted)]">Avatar URL</span>
-            <Input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://…" />
-          </label>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-[var(--color-muted)]">Avatar</span>
+            <ImageUpload
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              folder="avatars"
+              label="Add avatar"
+              shape="circle"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">

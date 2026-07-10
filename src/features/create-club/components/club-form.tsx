@@ -1,10 +1,9 @@
 'use client'
 
-import { UploadCloud } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/shared/lib/cn'
+import { ImageUpload } from '@/shared/components/image-upload'
 import { estimatePrice } from '../api/create-club.api'
 import type { ClubSocials, CreateClubInput, CurveType } from '../types'
 import { CurvePicker } from './curve-picker'
@@ -75,35 +74,12 @@ export function ClubForm({ submitting, error, onSubmit }: ClubFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Photo upload area (web2: paste a URL; real upload is a later swap). */}
       <div className="flex flex-col gap-2">
-        <label
-          className={cn(
-            'flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] transition-colors hover:border-[var(--color-muted)]',
-          )}
-          style={
-            avatarUrl
-              ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : undefined
-          }
-        >
-          {!avatarUrl && (
-            <>
-              <UploadCloud className="size-6 text-[var(--color-accent)]" />
-              <span className="text-xs">Tap to add photo</span>
-            </>
-          )}
-          <input
-            type="url"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="Image URL"
-            className="sr-only"
-          />
-        </label>
-        {/* Web2 photo entry: paste an image URL (real file upload is a later swap). */}
-        <Input
+        <ImageUpload
           value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="Image URL (optional)"
+          onChange={setAvatarUrl}
+          folder="clubs"
+          label="Tap to add photo"
+          shape="rect"
         />
       </div>
 

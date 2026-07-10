@@ -11,6 +11,7 @@ import {
   Instagram,
   Linkedin,
   MapPin,
+  MonitorPlay,
   Plus,
   Smile,
   Twitter,
@@ -29,6 +30,7 @@ import type { Post } from '../types'
 
 const PLATFORMS = [
   { id: 'x', label: 'X', icon: Twitter },
+  { id: 'kick', label: 'Kick', icon: MonitorPlay },
   { id: 'instagram', label: 'Instagram', icon: Instagram },
   { id: 'linkedin', label: 'LinkedIn', icon: Linkedin },
   { id: 'farcaster', label: 'Farcaster', icon: Hash },
